@@ -980,6 +980,67 @@
 		}
 	});
 
+
+	// wp.media.controller.ImageEdit
+	// -------------------------
+	media.controller.ImageEdit = media.controller.Library.extend({
+
+		defaults: _.defaults({
+			id:         'image-edit',
+			filterable: 'uploaded',
+			multiple:   false,
+			toolbar:    'image-edit',
+			title:      'foo',
+			priority:   60,
+
+			syncSelection: false
+		}, media.controller.Library.prototype.defaults ),
+
+		initialize: function() {
+			// If we haven't been provided a `library`, create a `Selection`.
+			if ( ! this.get('library') )
+				this.set( 'library', new media.model.Selection() );
+
+			// The single `Attachment` view to be used in the `Attachments` view.
+			if ( ! this.get('AttachmentView') )
+				this.set( 'AttachmentView', media.view.Attachment.EditLibrary );
+			media.controller.Library.prototype.initialize.apply( this, arguments );
+		},
+
+		activate: function() {
+			var library = this.get('library');
+
+			// Limit the library to images only.
+			library.props.set( 'type', 'image' );
+
+			// Watch for uploaded attachments.
+			this.get('library').observe( wp.Uploader.queue );
+
+			this.frame.on( 'content:render:browse', this.imageSettings, this );
+
+			media.controller.Library.prototype.activate.apply( this, arguments );
+		},
+
+		imageSettings: function( browser ) {
+			var library = this.get('library');
+
+			if ( ! library || ! browser ) {
+				return;
+			}
+
+			library.image = library.image || new Backbone.Model();
+
+			browser.sidebar.set({
+				'image-edit': new media.view.Settings.Image({
+					controller: this,
+					model:      library.image,
+					priority:   40
+				})
+			});
+		}
+
+	});
+
 	/**
 	 * wp.media.controller.Embed
 	 *
@@ -1653,7 +1714,13 @@
 					menu:    'gallery'
 				}),
 
-				new media.controller.GalleryAdd()
+				new media.controller.GalleryAdd(),
+
+				new media.controller.ImageEdit({
+					library: options.selection,
+					editing: options.editing,
+					menu: 'image-edit'
+				})
 			]);
 
 
@@ -1667,16 +1734,22 @@
 			 * call 'bindHandlers' directly on the parent class
 			 */
 			media.view.MediaFrame.Select.prototype.bindHandlers.apply( this, arguments );
+			this.on( 'menu:create', function( data ) {
+				console.log( 'menu create:', this, data );
+			} );
 			this.on( 'menu:create:gallery', this.createMenu, this );
+			this.on( 'menu:create:image-edit', this.createMenu, this );
 			this.on( 'toolbar:create:main-insert', this.createToolbar, this );
 			this.on( 'toolbar:create:main-gallery', this.createToolbar, this );
+			this.on( 'toolbar:create:image-edit', this.createToolbar, this );
 			this.on( 'toolbar:create:featured-image', this.featuredImageToolbar, this );
 			this.on( 'toolbar:create:main-embed', this.mainEmbedToolbar, this );
 
 			var handlers = {
 				menu: {
 					'default': 'mainMenu',
-					'gallery': 'galleryMenu'
+					'gallery': 'galleryMenu',
+					'image-edit': 'imageEditMenu'
 				},
 
 				content: {
@@ -1688,7 +1761,8 @@
 					'main-insert':      'mainInsertToolbar',
 					'main-gallery':     'mainGalleryToolbar',
 					'gallery-edit':     'galleryEditToolbar',
-					'gallery-add':      'galleryAddToolbar'
+					'gallery-add':      'galleryAddToolbar',
+					'image-edit':       'imageEditToolbar'
 				}
 			};
 
@@ -1704,6 +1778,7 @@
 		 * @param {wp.Backbone.View} view
 		 */
 		mainMenu: function( view ) {
+			console.log( "hi mr. main menu." );
 			view.set({
 				'library-separator': new media.View({
 					className: 'separator',
@@ -1735,6 +1810,33 @@
 					priority: 40
 				})
 			});
+		},
+
+		imageEditMenu: function( view ) {
+			var lastState = this.lastState(),
+				previous = lastState && lastState.id,
+				frame = this;
+
+			console.log( 'hi' );
+
+			return;
+			view.set({
+				cancel: {
+					text:     'Cancel Edit',
+					priority: 20,
+					click:    function() {
+						if ( previous )
+							frame.setState( previous );
+						else
+							frame.close();
+					}
+				},
+				separateCancel: new media.View({
+					className: 'separator',
+					priority: 40
+				})
+			});
+
 		},
 
 		// Content
@@ -1919,6 +2021,30 @@
 							edit.get('library').add( state.get('selection').models );
 							state.trigger('reset');
 							controller.setState('gallery-edit');
+						}
+					}
+				}
+			}) );
+		},
+
+		imageEditToolbar: function() {
+			this.toolbar.set( new media.view.Toolbar({
+				controller: this,
+				items: {
+					insert: {
+						style:    'primary',
+						text:     'Replace Image',
+						priority: 80,
+						requires: { selection: true },
+
+						click: function() {
+							var controller = this.controller,
+								state = controller.state(),
+								edit = controller.state('image-edit');
+
+							edit.get('library').add( state.get('selection').models );
+							state.trigger('reset');
+							controller.setState('image-edit');
 						}
 					}
 				}
@@ -4594,6 +4720,13 @@
 		template:  media.template('gallery-settings')
 	});
 
+	/**
+	 * wp.media.view.Settings.Image
+	 */
+	media.view.Settings.Image = media.view.Settings.extend({
+		className: 'image-settings',
+		template:  media.template('gallery-settings')
+	});
 	/**
 	 * wp.media.view.Attachment.Details
 	 *

@@ -452,6 +452,54 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 		}
 	});
 
+	editor.on( 'mouseup', function( e ) {
+		var metadata, classes;
+		if ( e.target.nodeName === 'IMG' && editor.dom.getAttrib( e.target, 'data-mce-selected' ) === '1' ) {
+			// Don't trigger on right-click
+			if ( e.button !== 2 ) {
+
+				if ( editor.dom.hasClass( e.target, 'mceItem' ) || '1' === editor.dom.getAttrib( e.target, 'data-mce-placeholder' ) ) {
+					return;
+				}
+				metadata = {};
+
+
+
+				classes = e.target.className.split(' ');
+				tinymce.each( classes, function( name ) {
+
+					if ( /^wp-image/.test( name ) ) {
+						metadata.attachment_id = name.replace( 'wp-image-', '' );
+					}
+
+					if ( /^align/.test( name ) ) {
+						metadata.align = name.replace( 'align', '');
+
+					}
+				} );
+
+				metadata.alt = '';
+				metadata.caption = '';
+				metadata.linkTo = '';
+
+
+				console.log( metadata );
+
+				// need to set the attachments
+				// add sanity check
+				//
+				// get caption and other settings
+				wp.media.editor.open( 'content', {
+					frame: 'post',
+					state: 'image-edit',
+					title: 'foo', // need to deal with the title
+					multiple: false,
+					editing: true
+				} );
+			}
+		}
+	} );
+
 	editor.wpSetImgCaption = function( content ) {
 		return parseShortcode( content );
 	};
