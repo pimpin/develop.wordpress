@@ -981,63 +981,59 @@
 	});
 
 
-	// wp.media.controller.ImageEdit
-	// -------------------------
-	media.controller.ImageEdit = media.controller.Library.extend({
+	media.controller.ImageDetails = media.controller.State.extend({
 
 		defaults: _.defaults({
-			id:         'image-edit',
+			id: 'image-details',
 			filterable: 'uploaded',
-			multiple:   false,
-			toolbar:    'image-edit',
-			title:      'foo',
-			priority:   60,
-
+			multiple: false,
+			toolbar: 'image-details',
+			title: l10n.imageDetailsTitle,
+			content: 'image-details',
+			menu: 'image-details',
+			attachment: false,
+			priority: 60,
+			editing: false,
 			syncSelection: false
 		}, media.controller.Library.prototype.defaults ),
 
-		initialize: function() {
-			// If we haven't been provided a `library`, create a `Selection`.
-			if ( ! this.get('library') )
-				this.set( 'library', new media.model.Selection() );
+		// probably should have some notion of an embed model
+		initialize: function( options ) {
+			var attachment;
+			this.props = new Backbone.Model( options.metadata );
+			// get the attachment
+			if ( options.metadata.attachment_id ) {
+				attachment = new wp.media.model.Attachment( { id: parseInt( options.metadata.attachment_id, 10 ) } );
+				attachment.fetch();
+				this.attachment = attachment;
+			}
+			// should delete the metadata from the options hash
+			media.controller.State.prototype.initialize.apply( this, arguments );
 
-			// The single `Attachment` view to be used in the `Attachments` view.
-			if ( ! this.get('AttachmentView') )
-				this.set( 'AttachmentView', media.view.Attachment.EditLibrary );
-			media.controller.Library.prototype.initialize.apply( this, arguments );
 		},
 
 		activate: function() {
-			var library = this.get('library');
-
-			// Limit the library to images only.
-			library.props.set( 'type', 'image' );
-
-			// Watch for uploaded attachments.
-			this.get('library').observe( wp.Uploader.queue );
-
-			this.frame.on( 'content:render:browse', this.imageSettings, this );
-
-			media.controller.Library.prototype.activate.apply( this, arguments );
+			media.controller.State.prototype.activate.apply( this, arguments );
 		},
 
-		imageSettings: function( browser ) {
-			var library = this.get('library');
-
-			if ( ! library || ! browser ) {
-				return;
-			}
-
-			library.image = library.image || new Backbone.Model();
-
-			browser.sidebar.set({
-				'image-edit': new media.view.Settings.Image({
-					controller: this,
-					model:      library.image,
-					priority:   40
-				})
-			});
+		deactivate: function() {
+			/**
+			 * call 'deactivate' directly on the parent class
+			 */
+			media.controller.State.prototype.deactivate.apply( this, arguments );
 		}
+
+	});
+
+	/**
+	 * wp.media.controller.ReplaceImage
+	 *
+	 * Replace a selected single image
+	 *
+	 **/
+	media.controller.ReplaceImage = media.controller.Library.extend({
+
+
 
 	});
 
@@ -1714,13 +1710,8 @@
 					menu:    'gallery'
 				}),
 
-				new media.controller.GalleryAdd(),
+				new media.controller.GalleryAdd()
 
-				new media.controller.ImageEdit({
-					library: options.selection,
-					editing: options.editing,
-					menu: 'image-edit'
-				})
 			]);
 
 
@@ -1734,9 +1725,6 @@
 			 * call 'bindHandlers' directly on the parent class
 			 */
 			media.view.MediaFrame.Select.prototype.bindHandlers.apply( this, arguments );
-			this.on( 'menu:create', function( data ) {
-				console.log( 'menu create:', this, data );
-			} );
 			this.on( 'menu:create:gallery', this.createMenu, this );
 			this.on( 'menu:create:image-edit', this.createMenu, this );
 			this.on( 'toolbar:create:main-insert', this.createToolbar, this );
@@ -1749,7 +1737,6 @@
 				menu: {
 					'default': 'mainMenu',
 					'gallery': 'galleryMenu',
-					'image-edit': 'imageEditMenu'
 				},
 
 				content: {
@@ -1762,7 +1749,6 @@
 					'main-gallery':     'mainGalleryToolbar',
 					'gallery-edit':     'galleryEditToolbar',
 					'gallery-add':      'galleryAddToolbar',
-					'image-edit':       'imageEditToolbar'
 				}
 			};
 
@@ -1778,7 +1764,6 @@
 		 * @param {wp.Backbone.View} view
 		 */
 		mainMenu: function( view ) {
-			console.log( "hi mr. main menu." );
 			view.set({
 				'library-separator': new media.View({
 					className: 'separator',
@@ -1812,32 +1797,6 @@
 			});
 		},
 
-		imageEditMenu: function( view ) {
-			var lastState = this.lastState(),
-				previous = lastState && lastState.id,
-				frame = this;
-
-			console.log( 'hi' );
-
-			return;
-			view.set({
-				cancel: {
-					text:     'Cancel Edit',
-					priority: 20,
-					click:    function() {
-						if ( previous )
-							frame.setState( previous );
-						else
-							frame.close();
-					}
-				},
-				separateCancel: new media.View({
-					className: 'separator',
-					priority: 40
-				})
-			});
-
-		},
 
 		// Content
 		embedContent: function() {
@@ -2027,30 +1986,104 @@
 			}) );
 		},
 
-		imageEditToolbar: function() {
+	});
+
+	// for now, we just extend MediaFrame instead of MediaFrame.Select t
+	media.view.MediaFrame.ImageDetails = media.view.MediaFrame.extend({
+		defaults: {
+			id:      'image',
+			url:     '',
+			menu:    'image-details',
+			content: 'image-details',
+			toolbar: 'image-details',
+			type:    'link',
+			title:    l10n.imageDetailsTitle,
+			priority: 120
+		},
+		initialize: function() {
+			media.view.MediaFrame.prototype.initialize.apply( this, arguments );
+			this.createStates();
+			// these will not be needed when we extend MediaFrame.Select
+			this.bindHandlers();
+		},
+
+		bindHandlers: function() {
+			this.on( 'menu:create:image-details', this.createMenu, this );
+			this.on( 'content:render:image-details', this.renderImageDetailsContent, this );
+			this.on( 'menu:render:image-details', this.renderMenu, this );
+			this.on( 'toolbar:render:image-details', this.renderToolbar, this );
+
+		},
+
+		createStates: function() {
+			var options = this.options;
+			this.states.add([
+				new media.controller.ImageDetails({
+					metadata: options.metadata,
+					editable: false,
+					menu: 'image-details'
+				})
+			]);
+		},
+
+		renderImageDetailsContent: function() {
+			var view = new media.view.ImageDetails({
+				controller: this,
+				model: this.state().props,
+				attachment: this.state().attachment
+			}).render();
+
+			this.content.set( view );
+
+		},
+
+		renderMenu: function( view ) {
+			var lastState = this.lastState(),
+				previous = lastState && lastState.id,
+				frame = this;
+
+			view.set({
+				cancel: {
+					text:     l10n.imageDetailsCancel,
+					priority: 20,
+					click:    function() {
+						if ( previous ) {
+							frame.setState( previous );
+						} else {
+							frame.close();
+						}
+					}
+				},
+				separateCancel: new media.View({
+					className: 'separator',
+					priority: 40
+				})
+			});
+
+		},
+
+
+		renderToolbar: function( view ) {
 			this.toolbar.set( new media.view.Toolbar({
 				controller: this,
 				items: {
-					insert: {
+					update: {
 						style:    'primary',
-						text:     'Replace Image',
+						text:     l10n.update,
 						priority: 80,
-						requires: { selection: true },
 
 						click: function() {
-							var controller = this.controller,
-								state = controller.state(),
-								edit = controller.state('image-edit');
-
-							edit.get('library').add( state.get('selection').models );
-							state.trigger('reset');
-							controller.setState('image-edit');
+							console.log( 'clicked update. the updating of the image should be triggered here' );
 						}
 					}
 				}
 			}) );
 		}
+
+
+
 	});
+
 
 	/**
 	 * wp.media.view.Modal
@@ -4522,7 +4555,7 @@
 			this.model = this.model || new Backbone.Model();
 			this.model.on( 'change', this.updateChanges, this );
 		},
-
+		// this isn't super flexible
 		prepare: function() {
 			return _.defaults({
 				model: this.model.toJSON()
@@ -5064,5 +5097,11 @@
 		updateImage: function() {
 			this.$('img').attr( 'src', this.model.get('url') );
 		}
+	});
+
+	// maybe I should just avoid the inheritance
+	media.view.ImageDetails = media.view.Settings.extend({
+		className: 'image-details',
+		template:  media.template('image-details')
 	});
 }(jQuery));

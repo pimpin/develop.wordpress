@@ -30,6 +30,8 @@ window.wp = window.wp || {};
 			frame = new MediaFrame.Select( attributes );
 		} else if ( 'post' === attributes.frame && MediaFrame.Post ) {
 			frame = new MediaFrame.Post( attributes );
+		} else if ( 'image' === attributes.frame && MediaFrame.ImageDetails ) {
+			frame = new MediaFrame.ImageDetails( attributes );
 		}
 
 		delete attributes.frame;

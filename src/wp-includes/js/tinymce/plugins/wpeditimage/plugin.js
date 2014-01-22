@@ -453,7 +453,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 	});
 
 	editor.on( 'mouseup', function( e ) {
-		var metadata, classes;
+		var metadata, classes, frame, caption;
 		if ( e.target.nodeName === 'IMG' && editor.dom.getAttrib( e.target, 'data-mce-selected' ) === '1' ) {
 			// Don't trigger on right-click
 			if ( e.button !== 2 ) {
@@ -461,15 +461,30 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 				if ( editor.dom.hasClass( e.target, 'mceItem' ) || '1' === editor.dom.getAttrib( e.target, 'data-mce-placeholder' ) ) {
 					return;
 				}
-				metadata = {};
 
 
+				// default attributes
+				metadata = {
+					attachment_id: false,
+					url: false,
+					size: 'none',
+					caption: '',
+					alt: '',
+					align: 'none',
+					linkTo: ''
+				};
 
+
+				metadata.url = editor.dom.getAttrib( e.target, 'src' );
+				metadata.alt = editor.dom.getAttrib( e.target, 'alt' );
+
+
+				// extract meta data from classes (candidate for turning into a method)
 				classes = e.target.className.split(' ');
 				tinymce.each( classes, function( name ) {
 
 					if ( /^wp-image/.test( name ) ) {
-						metadata.attachment_id = name.replace( 'wp-image-', '' );
+						metadata.attachment_id = parseInt( name.replace( 'wp-image-', '' ), 10 );
 					}
 
 					if ( /^align/.test( name ) ) {
@@ -478,24 +493,29 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					}
 				} );
 
-				metadata.alt = '';
-				metadata.caption = '';
-				metadata.linkTo = '';
 
+				// extract caption
+				caption = editor.dom.getParents( e.target, '.wp-caption' );
 
-				console.log( metadata );
+				if ( caption.length ) {
+					caption = editor.dom.select( 'dd.wp-caption-dd', caption[0] );
+					if ( caption.length ) {
+						metadata.caption = editor.serializer.serialize( caption[0] )
+							.replace( /<br[^>]*>/g, '$&\n' ).replace( /^<p>/, '' ).replace( /<\/p>$/, '' );
+					}
+				}
 
-				// need to set the attachments
-				// add sanity check
-				//
-				// get caption and other settings
-				wp.media.editor.open( 'content', {
-					frame: 'post',
-					state: 'image-edit',
-					title: 'foo', // need to deal with the title
+				frame = wp.media({
+					frame: 'image',
+					state: 'image-details',
 					multiple: false,
-					editing: true
+					editing: true,
+					metadata: metadata
 				} );
+
+				frame.open();
+
+
 			}
 		}
 	} );
