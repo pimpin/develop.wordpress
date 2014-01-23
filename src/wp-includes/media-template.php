@@ -509,6 +509,11 @@ function wp_print_media_templates() {
 					<img src="{{ data.model.url }}" draggable="false" />
 				</div>
 
+				<div class="url">
+					<?php // might want to make the url editable if it isn't an attachment ?>
+					<input type="text" disabled="disabled" value="{{ data.model.url }}" />
+				</div>
+
 				<?php
 				/** This filter is documented in wp-admin/includes/media.php */
 				if ( ! apply_filters( 'disable_captions', '' ) ) : ?>
@@ -540,9 +545,27 @@ function wp_print_media_templates() {
 						</button>
 					</div>
 				</div>
-
 				<div class="setting link-to">
-					<span><?php _e('Link To'); ?></span>
+				<span><?php _e('Link To'); ?></span>
+
+				<# if ( data.attachment ) { #>
+					<div class="button-group button-large" data-setting="link">
+						<button class="button" value="file">
+							<?php esc_attr_e('Media File'); ?>
+						</button>
+						<button class="button" value="post">
+							<?php esc_attr_e('Attachment Page'); ?>
+						</button>
+						<button class="button" value="custom">
+							<?php esc_attr_e('Custom URL'); ?>
+						</button>
+						<button class="button active" value="none">
+							<?php esc_attr_e('None'); ?>
+						</button>
+					</div>
+					<input type="text" class="link-to-custom hidden" data-setting="linkUrl" />
+
+				<# } else { #>
 					<div class="button-group button-large" data-setting="link">
 						<button class="button" value="file">
 							<?php esc_attr_e('Image URL'); ?>
@@ -554,7 +577,32 @@ function wp_print_media_templates() {
 							<?php esc_attr_e('None'); ?>
 						</button>
 					</div>
-					<input type="text" class="link-to-custom" data-setting="linkUrl" />
+					<input type="text" class="link-to-custom hidden" data-setting="linkUrl" />
+
+				<# } #>
+
+
+				<# if ( data.attachment ) { #>
+					<div class="setting size">
+						<span><?php _e('Size'); ?></span>
+						<div class="button-group button-large" data-setting="size">
+						<?php
+							/** This filter is documented in wp-admin/includes/media.php */
+							$sizes = apply_filters( 'image_size_names_choose', array(
+								'thumbnail' => __('Thumbnail'),
+								'medium'    => __('Medium'),
+								'large'     => __('Large'),
+								'full'      => __('Full Size'),
+							) );
+
+							foreach ( $sizes as $value => $name ) : ?>
+								<button class="button" value="<?php echo esc_attr( $value ); ?>">
+									<?php echo esc_html( $name ); ?>
+								</button>
+							<?php endforeach; ?>
+						</div>
+					</div>
+				<# } #>
 				</div>
 			</div>
 		</div>

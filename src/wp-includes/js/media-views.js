@@ -1001,14 +1001,17 @@
 		initialize: function( options ) {
 			var attachment;
 			this.props = new Backbone.Model( options.metadata );
+
 			// get the attachment
 			if ( options.metadata.attachment_id ) {
-				attachment = new wp.media.model.Attachment( { id: parseInt( options.metadata.attachment_id, 10 ) } );
-				attachment.fetch();
+				attachment = media.model.Attachment.get( options.metadata.attachment_id );
+				this.dfd = attachment.fetch();
 				this.attachment = attachment;
+				this.props.attachment = attachment;
+			} else {
+				// should delete the metadata from the options hash
+				media.controller.State.prototype.initialize.apply( this, arguments );
 			}
-			// should delete the metadata from the options hash
-			media.controller.State.prototype.initialize.apply( this, arguments );
 
 		},
 
@@ -2030,7 +2033,9 @@
 			var view = new media.view.ImageDetails({
 				controller: this,
 				model: this.state().props,
-				attachment: this.state().attachment
+				attachment: this.state().attachment,
+				// need to figure out a less messy way to handle this
+				dfd: this.state().dfd
 			}).render();
 
 			this.content.set( view );
@@ -2062,8 +2067,7 @@
 
 		},
 
-
-		renderToolbar: function( view ) {
+		renderToolbar: function() {
 			this.toolbar.set( new media.view.Toolbar({
 				controller: this,
 				items: {
@@ -5102,6 +5106,44 @@
 	// maybe I should just avoid the inheritance
 	media.view.ImageDetails = media.view.Settings.extend({
 		className: 'image-details',
-		template:  media.template('image-details')
+		template:  media.template('image-details'),
+
+		initialize: function( options ) {
+			media.view.Settings.prototype.initialize.apply( this, arguments );
+			this.attachment = options.attachment;
+			this.dfd = options.dfd;
+		},
+
+		prepare: function() {
+			var attachment = false;
+
+			if ( this.attachment ) {
+				attachment = this.attachment.toJSON();
+				console.log( 'prepare attachment: ', attachment );
+			}
+			return _.defaults({
+				model: this.model.toJSON(),
+				attachment: attachment
+			}, this.options );
+		},
+
+
+		render: function() {
+			var self = this,
+				args = arguments;
+			console.log( this.prepare() );
+			if ( this.attachment && 'pending' === this.dfd.state() ) {
+				// should instead show a spinner when the attachment is new and then add a listener that updates on change
+				this.dfd.done( function() {
+					console.log( 'promise resolving: ', self );
+					media.view.Settings.prototype.render.apply( self, args );
+				} );
+			} else {
+				media.view.Settings.prototype.render.apply( this, arguments );
+			}
+
+
+			return this;
+		}
 	});
 }(jQuery));

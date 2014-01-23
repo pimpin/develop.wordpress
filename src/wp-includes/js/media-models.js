@@ -328,6 +328,20 @@ window.wp = window.wp || {};
 	});
 
 	/**
+	 * wp.media.model.Attachment
+	 *
+	 * @constructor
+	 * @augments Backbone.Model
+	 *
+	 **/
+	PostImage = media.model.PostImage = Backbone.Model.extend({
+
+
+
+
+	});
+
+	/**
 	 * wp.media.model.Attachments
 	 *
 	 * @constructor

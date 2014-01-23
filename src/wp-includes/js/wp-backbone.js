@@ -363,7 +363,7 @@ window.wp = window.wp || {};
 			if ( this.prepare )
 				options = this.prepare();
 
-			console.log( "View options: ", options );
+			console.log( options );
 			this.views.detach();
 
 			if ( this.template ) {

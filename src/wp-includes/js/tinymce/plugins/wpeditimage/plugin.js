@@ -453,7 +453,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 	});
 
 	editor.on( 'mouseup', function( e ) {
-		var metadata, classes, frame, caption;
+		var metadata, classes, frame, captionBlock, caption, link, linkType, image;
 		if ( e.target.nodeName === 'IMG' && editor.dom.getAttrib( e.target, 'data-mce-selected' ) === '1' ) {
 			// Don't trigger on right-click
 			if ( e.button !== 2 ) {
@@ -463,6 +463,8 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 				}
 
 
+				image = e.target;
+
 				// default attributes
 				metadata = {
 					attachment_id: false,
@@ -471,16 +473,17 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					caption: '',
 					alt: '',
 					align: 'none',
-					linkTo: ''
+					link: 'none',
+					linkUrl: ''
 				};
 
 
-				metadata.url = editor.dom.getAttrib( e.target, 'src' );
-				metadata.alt = editor.dom.getAttrib( e.target, 'alt' );
+				metadata.url = editor.dom.getAttrib( image, 'src' );
+				metadata.alt = editor.dom.getAttrib( image, 'alt' );
 
 
 				// extract meta data from classes (candidate for turning into a method)
-				classes = e.target.className.split(' ');
+				classes = image.className.split( ' ' );
 				tinymce.each( classes, function( name ) {
 
 					if ( /^wp-image/.test( name ) ) {
@@ -488,23 +491,46 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					}
 
 					if ( /^align/.test( name ) ) {
-						metadata.align = name.replace( 'align', '');
+						metadata.align = name.replace( 'align', '' );
+					}
 
+					if ( /^size/.test( name ) ) {
+						metadata.size = name.replace( 'size-', '' );
 					}
 				} );
 
 
 				// extract caption
-				caption = editor.dom.getParents( e.target, '.wp-caption' );
+				captionBlock = editor.dom.getParents( image, '.wp-caption' );
 
-				if ( caption.length ) {
-					caption = editor.dom.select( 'dd.wp-caption-dd', caption[0] );
+				if ( captionBlock.length ) {
+					captionBlock = captionBlock[0];
+
+					classes = captionBlock.className.split( ' ' );
+					tinymce.each( classes, function( name ) {
+						if ( /^align/.test( name ) ) {
+							metadata.align = name.replace( 'align', '' );
+						}
+					} );
+					caption = editor.dom.select( 'dd.wp-caption-dd', captionBlock );
 					if ( caption.length ) {
-						metadata.caption = editor.serializer.serialize( caption[0] )
+						caption = caption[0];
+						// need to do some more thinking about this
+						metadata.caption = editor.serializer.serialize( caption )
 							.replace( /<br[^>]*>/g, '$&\n' ).replace( /^<p>/, '' ).replace( /<\/p>$/, '' );
+
 					}
 				}
 
+				// extract linkTo
+				if ( image.parentNode.nodeName === 'A' ) {
+					link = image.parentNode;
+					metadata.linkUrl = editor.dom.getAttrib( link, 'href' );
+
+					// get rel attrib
+				}
+
+				// file, post, custom, none
 				frame = wp.media({
 					frame: 'image',
 					state: 'image-details',
