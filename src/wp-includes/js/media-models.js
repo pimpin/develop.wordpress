@@ -2,7 +2,7 @@
 window.wp = window.wp || {};
 
 (function($){
-	var Attachment, Attachments, Query, compare, l10n, media;
+	var Attachment, Attachments, Query, PostImage, compare, l10n, media;
 
 	/**
 	 * wp.media( attributes )
@@ -336,7 +336,45 @@ window.wp = window.wp || {};
 	 **/
 	PostImage = media.model.PostImage = Backbone.Model.extend({
 
+		initialize: function( attributes ) {
+			this.attachment = false;
 
+			if ( attributes.attachment_id ) {
+				this.attachment = media.model.Attachment.get( attributes.attachment_id );
+				this.dfd = this.attachment.fetch();
+				this.listenTo( this.attachment, 'sync', this.setLinkTypeFromUrl );
+
+			}
+
+		},
+
+		setLinkTypeFromUrl: function() {
+			var linkUrl = this.get( 'linkUrl' ),
+				type;
+
+			if ( ! linkUrl ) {
+				this.set( 'link', 'none' );
+				return;
+			}
+
+			// default to custom if there is a linkUrl
+			type = 'custom';
+
+			if ( this.attachment ) {
+				if ( this.attachment.get( 'url' ) === linkUrl ) {
+					type = 'file';
+				} else if ( this.attachment.get( 'link' ) === linkUrl ) {
+					type = 'post';
+				}
+			} else {
+				if ( this.get( 'url' ) === linkUrl ) {
+					type = 'file';
+				}
+			}
+
+			this.set( 'link', type );
+
+		}
 
 
 	});

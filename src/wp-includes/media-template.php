@@ -563,7 +563,7 @@ function wp_print_media_templates() {
 							<?php esc_attr_e('None'); ?>
 						</button>
 					</div>
-					<input type="text" class="link-to-custom hidden" data-setting="linkUrl" />
+					<input type="text" class="link-to-custom" data-setting="linkUrl" />
 
 				<# } else { #>
 					<div class="button-group button-large" data-setting="link">
@@ -577,7 +577,7 @@ function wp_print_media_templates() {
 							<?php esc_attr_e('None'); ?>
 						</button>
 					</div>
-					<input type="text" class="link-to-custom hidden" data-setting="linkUrl" />
+					<input type="text" class="link-to-custom" data-setting="linkUrl" />
 
 				<# } #>
 

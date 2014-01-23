@@ -999,20 +999,10 @@
 
 		// probably should have some notion of an embed model
 		initialize: function( options ) {
-			var attachment;
-			this.props = new Backbone.Model( options.metadata );
+			var attachment = false;
+			this.props = new media.model.PostImage( options.metadata );
 
-			// get the attachment
-			if ( options.metadata.attachment_id ) {
-				attachment = media.model.Attachment.get( options.metadata.attachment_id );
-				this.dfd = attachment.fetch();
-				this.attachment = attachment;
-				this.props.attachment = attachment;
-			} else {
-				// should delete the metadata from the options hash
-				media.controller.State.prototype.initialize.apply( this, arguments );
-			}
-
+			media.controller.State.prototype.initialize.apply( this, arguments );
 		},
 
 		activate: function() {
@@ -2032,10 +2022,7 @@
 		renderImageDetailsContent: function() {
 			var view = new media.view.ImageDetails({
 				controller: this,
-				model: this.state().props,
-				attachment: this.state().attachment,
-				// need to figure out a less messy way to handle this
-				dfd: this.state().dfd
+				model: this.state().props
 			}).render();
 
 			this.content.set( view );
@@ -5104,22 +5091,15 @@
 	});
 
 	// maybe I should just avoid the inheritance
-	media.view.ImageDetails = media.view.Settings.extend({
+	media.view.ImageDetails = media.view.Settings.AttachmentDisplay.extend({
 		className: 'image-details',
 		template:  media.template('image-details'),
-
-		initialize: function( options ) {
-			media.view.Settings.prototype.initialize.apply( this, arguments );
-			this.attachment = options.attachment;
-			this.dfd = options.dfd;
-		},
 
 		prepare: function() {
 			var attachment = false;
 
-			if ( this.attachment ) {
-				attachment = this.attachment.toJSON();
-				console.log( 'prepare attachment: ', attachment );
+			if ( this.model.attachment ) {
+				attachment = this.model.attachment.toJSON();
 			}
 			return _.defaults({
 				model: this.model.toJSON(),
@@ -5131,15 +5111,13 @@
 		render: function() {
 			var self = this,
 				args = arguments;
-			console.log( this.prepare() );
-			if ( this.attachment && 'pending' === this.dfd.state() ) {
+			if ( this.model.attachment && 'pending' === this.model.dfd.state() ) {
 				// should instead show a spinner when the attachment is new and then add a listener that updates on change
-				this.dfd.done( function() {
-					console.log( 'promise resolving: ', self );
-					media.view.Settings.prototype.render.apply( self, args );
+				this.model.dfd.done( function() {
+					media.view.Settings.AttachmentDisplay.prototype.render.apply( self, args );
 				} );
 			} else {
-				media.view.Settings.prototype.render.apply( this, arguments );
+				media.view.Settings.AttachmentDisplay.prototype.render.apply( this, arguments );
 			}
 
 
