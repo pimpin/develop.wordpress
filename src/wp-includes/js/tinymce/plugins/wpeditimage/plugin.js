@@ -101,6 +101,79 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 		});
 	}
 
+	function extractImageData( imageNode ) {
+		var classes, metadata, captionBlock, caption;
+
+		// default attributes
+		metadata = {
+			attachment_id: false,
+			url: false,
+			height: '',
+			width: '',
+			size: 'none',
+			caption: '',
+			alt: '',
+			align: 'none',
+			link: 'none',
+			linkUrl: ''
+		};
+
+		metadata.url = editor.dom.getAttrib( imageNode, 'src' );
+		metadata.alt = editor.dom.getAttrib( imageNode, 'alt' );
+		metadata.width = parseInt( editor.dom.getAttrib( imageNode, 'width' ), 10 );
+		metadata.height = parseInt( editor.dom.getAttrib( imageNode, 'height' ), 10 );
+
+		//TODO: probably should capture attributes on both the <img /> and the <a /> so that they can be restored when the image and/or caption are updated
+
+		// extract meta data from classes (candidate for turning into a method)
+		classes = imageNode.className.split( ' ' );
+		tinymce.each( classes, function( name ) {
+
+			if ( /^wp-image/.test( name ) ) {
+				metadata.attachment_id = parseInt( name.replace( 'wp-image-', '' ), 10 );
+			}
+
+			if ( /^align/.test( name ) ) {
+				metadata.align = name.replace( 'align', '' );
+			}
+
+			if ( /^size/.test( name ) ) {
+				metadata.size = name.replace( 'size-', '' );
+			}
+		} );
+
+
+		// extract caption
+		captionBlock = editor.dom.getParents( imageNode, '.wp-caption' );
+
+		if ( captionBlock.length ) {
+			captionBlock = captionBlock[0];
+
+			classes = captionBlock.className.split( ' ' );
+			tinymce.each( classes, function( name ) {
+				if ( /^align/.test( name ) ) {
+					metadata.align = name.replace( 'align', '' );
+				}
+			} );
+			caption = editor.dom.select( 'dd.wp-caption-dd', captionBlock );
+			if ( caption.length ) {
+				caption = caption[0];
+				// need to do some more thinking about this
+				metadata.caption = editor.serializer.serialize( caption )
+					.replace( /<br[^>]*>/g, '$&\n' ).replace( /^<p>/, '' ).replace( /<\/p>$/, '' );
+
+			}
+		}
+
+		// extract linkTo
+		if ( imageNode.parentNode.nodeName === 'A' ) {
+			metadata.linkUrl = editor.dom.getAttrib( imageNode.parentNode, 'href' );
+		}
+
+		return metadata;
+
+	}
+
 	function updateImage( imageNode, imageData ) {
 		var className, width, node, html, captionNode, nodeToReplace, uid;
 
@@ -133,7 +206,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 				nodeToReplace = imageNode.parentNode;
 			}
 		}
-
+		// uniqueId isn't super exciting, so maybe we want to use something else
 		uid = editor.dom.uniqueId( 'wp_' );
 		editor.dom.setAttrib( node, 'data-wp-replace-id', uid );
 		editor.dom.replace( node, nodeToReplace );
@@ -548,7 +621,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 	});
 
 	editor.on( 'mouseup', function( e ) {
-		var metadata, classes, frame, captionBlock, caption, link, image;
+		var imageNode, frame;
 		if ( e.target.nodeName === 'IMG' && editor.dom.getAttrib( e.target, 'data-mce-selected' ) === '1' ) {
 			// Don't trigger on right-click
 			if ( e.button !== 2 ) {
@@ -558,76 +631,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 				}
 
 
-				image = e.target;
-
-				// default attributes
-				metadata = {
-					attachment_id: false,
-					url: false,
-					height: '',
-					width: '',
-					size: 'none',
-					caption: '',
-					alt: '',
-					align: 'none',
-					link: 'none',
-					linkUrl: ''
-				};
-
-				metadata.url = editor.dom.getAttrib( image, 'src' );
-				metadata.alt = editor.dom.getAttrib( image, 'alt' );
-				metadata.width = parseInt( editor.dom.getAttrib( image, 'width' ), 10 );
-				metadata.height = parseInt( editor.dom.getAttrib( image, 'height' ), 10 );
-
-				//TODO: probably should capture attributes on both the <img /> and the <a /> so that they can be restored when the image and/or caption are updated
-
-				// extract meta data from classes (candidate for turning into a method)
-				classes = image.className.split( ' ' );
-				tinymce.each( classes, function( name ) {
-
-					if ( /^wp-image/.test( name ) ) {
-						metadata.attachment_id = parseInt( name.replace( 'wp-image-', '' ), 10 );
-					}
-
-					if ( /^align/.test( name ) ) {
-						metadata.align = name.replace( 'align', '' );
-					}
-
-					if ( /^size/.test( name ) ) {
-						metadata.size = name.replace( 'size-', '' );
-					}
-				} );
-
-
-				// extract caption
-				captionBlock = editor.dom.getParents( image, '.wp-caption' );
-
-				if ( captionBlock.length ) {
-					captionBlock = captionBlock[0];
-
-					classes = captionBlock.className.split( ' ' );
-					tinymce.each( classes, function( name ) {
-						if ( /^align/.test( name ) ) {
-							metadata.align = name.replace( 'align', '' );
-						}
-					} );
-					caption = editor.dom.select( 'dd.wp-caption-dd', captionBlock );
-					if ( caption.length ) {
-						caption = caption[0];
-						// need to do some more thinking about this
-						metadata.caption = editor.serializer.serialize( caption )
-							.replace( /<br[^>]*>/g, '$&\n' ).replace( /^<p>/, '' ).replace( /<\/p>$/, '' );
-
-					}
-				}
-
-				// extract linkTo
-				if ( image.parentNode.nodeName === 'A' ) {
-					link = image.parentNode;
-					metadata.linkUrl = editor.dom.getAttrib( link, 'href' );
-
-					// get rel attrib
-				}
+				imageNode = e.target;
 
 				// file, post, custom, none
 				frame = wp.media({
@@ -635,13 +639,13 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					state: 'image-details',
 					multiple: false,
 					editing: true,
-					metadata: metadata
+					metadata: extractImageData( imageNode )
 				} );
 
 				// update the image when update is clicked in the media frame
 				frame.state('image-details').on( 'update', function( imageData ) {
 					editor.focus();
-					updateImage( image, imageData );
+					updateImage( imageNode, imageData );
 				} );
 
 				frame.open();
