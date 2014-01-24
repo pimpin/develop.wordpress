@@ -991,6 +991,7 @@
 			title: l10n.imageDetailsTitle,
 			content: 'image-details',
 			menu: 'image-details',
+			router: false,
 			attachment: false,
 			priority: 60,
 			editing: false,
@@ -1977,8 +1978,7 @@
 
 	});
 
-	// for now, we just extend MediaFrame instead of MediaFrame.Select t
-	media.view.MediaFrame.ImageDetails = media.view.MediaFrame.extend({
+	media.view.MediaFrame.ImageDetails = media.view.MediaFrame.Select.extend({
 		defaults: {
 			id:      'image',
 			url:     '',
@@ -1989,19 +1989,13 @@
 			title:    l10n.imageDetailsTitle,
 			priority: 120
 		},
-		initialize: function() {
-			media.view.MediaFrame.prototype.initialize.apply( this, arguments );
-			this.createStates();
-			// these will not be needed when we extend MediaFrame.Select
-			this.bindHandlers();
-		},
 
 		bindHandlers: function() {
+			media.view.MediaFrame.Select.prototype.bindHandlers.apply( this, arguments );
 			this.on( 'menu:create:image-details', this.createMenu, this );
 			this.on( 'content:render:image-details', this.renderImageDetailsContent, this );
 			this.on( 'menu:render:image-details', this.renderMenu, this );
 			this.on( 'toolbar:render:image-details', this.renderToolbar, this );
-
 		},
 
 		createStates: function() {
@@ -2011,6 +2005,14 @@
 					metadata: options.metadata,
 					editable: false,
 					menu: 'image-details'
+				}),
+				new media.controller.Library({
+					id: 'replace-image',
+					library:   media.query(),
+					multiple:  false,
+					title:     l10n.imageReplaceTitle,
+					menu: 'image-details',
+					priority:  80
 				})
 			]);
 		},
