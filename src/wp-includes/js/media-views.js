@@ -2022,7 +2022,8 @@
 		renderImageDetailsContent: function() {
 			var view = new media.view.ImageDetails({
 				controller: this,
-				model: this.state().props
+				model: this.state().props,
+				attachment: this.state().props.attachment
 			}).render();
 
 			this.content.set( view );

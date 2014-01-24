@@ -124,6 +124,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 		metadata.height = parseInt( editor.dom.getAttrib( imageNode, 'height' ), 10 );
 
 		//TODO: probably should capture attributes on both the <img /> and the <a /> so that they can be restored when the image and/or caption are updated
+		// maybe use getAttribs()
 
 		// extract meta data from classes (candidate for turning into a method)
 		classes = imageNode.className.split( ' ' );
@@ -231,9 +232,6 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 
 		mode = mode ? mode : 'node';
 
-		if ( imageData.size ) {
-			classes.push( 'size-' + imageData.size );
-		}
 
 		if ( ! imageData.caption ) {
 			classes.push( 'align' + imageData.align );
@@ -241,12 +239,16 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 
 		if ( imageData.attachment_id ) {
 			classes.push( 'wp-image-' + imageData.attachment_id );
+			if ( imageData.size ) {
+				classes.push( 'size-' + imageData.size );
+			}
 		}
 
 		props = {
 			src: imageData.url,
 			width: imageData.width,
-			height: imageData.height
+			height: imageData.height,
+			alt: imageData.alt
 		};
 
 		if ( classes.length ) {

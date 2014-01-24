@@ -596,9 +596,13 @@ function wp_print_media_templates() {
 							) );
 
 							foreach ( $sizes as $value => $name ) : ?>
-								<button class="button" value="<?php echo esc_attr( $value ); ?>">
-									<?php echo esc_html( $name ); ?>
-								</button>
+								<#
+								var size = data.attachment.sizes['<?php echo esc_js( $value ); ?>'];
+								if ( size ) { #>
+									<button class="button" value="<?php echo esc_attr( $value ); ?>">
+										<?php echo esc_html( $name ); ?>
+										</button>
+								<# } #>
 							<?php endforeach; ?>
 						</div>
 					</div>

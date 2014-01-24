@@ -343,8 +343,11 @@ window.wp = window.wp || {};
 				this.attachment = media.model.Attachment.get( attributes.attachment_id );
 				this.dfd = this.attachment.fetch();
 				this.listenTo( this.attachment, 'sync', this.setLinkTypeFromUrl );
-
 			}
+
+			// keep url in sync with changes to the type of link
+			this.on( 'change:link', this.updateLinkUrl, this );
+			this.on( 'change:size', this.updateSize, this );
 
 		},
 
@@ -373,6 +376,45 @@ window.wp = window.wp || {};
 			}
 
 			this.set( 'link', type );
+
+		},
+
+
+		updateLinkUrl: function() {
+			var link = this.get( 'link' ),
+				url;
+
+			switch( link ) {
+				case 'file':
+					if ( this.attachment ) {
+						url = this.attachment.get( 'url' );
+					} else {
+						url = this.get( 'url' );
+					}
+					this.set( 'linkUrl', url );
+					break;
+				case 'post':
+					this.set( 'linkUrl', this.attachment.get( 'link' ) );
+					break;
+				case 'none':
+					this.set( 'linkUrl', '' );
+					break;
+
+			}
+
+		},
+
+		updateSize: function() {
+			var size;
+
+			if ( ! this.attachment ) {
+				return;
+			}
+
+			size = this.attachment.get( 'sizes' )[ this.get( 'size' ) ];
+			this.set( 'url', size.url );
+			this.set( 'width', size.width );
+			this.set( 'height', size.height );
 
 		}
 
