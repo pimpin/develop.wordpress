@@ -668,7 +668,6 @@
 			}
 		},
 
-
 		/**
 		 * Setup 'workflow' and add to the 'workflows' cache. 'open' can
 		 *  subsequently be called upon it.
@@ -762,7 +761,6 @@
 			}, this );
 
 			workflow.state('featured-image').on( 'select', wp.media.featuredImage.select );
-
 			workflow.setState( workflow.options.state );
 			return workflow;
 		},

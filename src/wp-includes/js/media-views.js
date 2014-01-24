@@ -1704,7 +1704,6 @@
 				}),
 
 				new media.controller.GalleryAdd()
-
 			]);
 
 
@@ -1719,17 +1718,15 @@
 			 */
 			media.view.MediaFrame.Select.prototype.bindHandlers.apply( this, arguments );
 			this.on( 'menu:create:gallery', this.createMenu, this );
-			this.on( 'menu:create:image-edit', this.createMenu, this );
 			this.on( 'toolbar:create:main-insert', this.createToolbar, this );
 			this.on( 'toolbar:create:main-gallery', this.createToolbar, this );
-			this.on( 'toolbar:create:image-edit', this.createToolbar, this );
 			this.on( 'toolbar:create:featured-image', this.featuredImageToolbar, this );
 			this.on( 'toolbar:create:main-embed', this.mainEmbedToolbar, this );
 
 			var handlers = {
 				menu: {
 					'default': 'mainMenu',
-					'gallery': 'galleryMenu',
+					'gallery': 'galleryMenu'
 				},
 
 				content: {
@@ -1741,7 +1738,7 @@
 					'main-insert':      'mainInsertToolbar',
 					'main-gallery':     'mainGalleryToolbar',
 					'gallery-edit':     'galleryEditToolbar',
-					'gallery-add':      'galleryAddToolbar',
+					'gallery-add':      'galleryAddToolbar'
 				}
 			};
 
@@ -1789,7 +1786,6 @@
 				})
 			});
 		},
-
 
 		// Content
 		embedContent: function() {
@@ -4559,7 +4555,7 @@
 			this.model = this.model || new Backbone.Model();
 			this.model.on( 'change', this.updateChanges, this );
 		},
-		// this isn't super flexible
+
 		prepare: function() {
 			return _.defaults({
 				model: this.model.toJSON()
@@ -4757,13 +4753,6 @@
 		template:  media.template('gallery-settings')
 	});
 
-	/**
-	 * wp.media.view.Settings.Image
-	 */
-	media.view.Settings.Image = media.view.Settings.extend({
-		className: 'image-settings',
-		template:  media.template('gallery-settings')
-	});
 	/**
 	 * wp.media.view.Attachment.Details
 	 *
