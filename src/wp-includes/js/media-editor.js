@@ -669,11 +669,6 @@
 		},
 
 
-		edit: function() {
-
-
-		},
-
 		/**
 		 * Setup 'workflow' and add to the 'workflows' cache. 'open' can
 		 *  subsequently be called upon it.
