@@ -768,9 +768,6 @@
 
 			workflow.state('featured-image').on( 'select', wp.media.featuredImage.select );
 
-			workflow.state('edit-image').on( 'update', function() {
-				// do some stuff
-			} );
 			workflow.setState( workflow.options.state );
 			return workflow;
 		},
