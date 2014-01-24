@@ -101,6 +101,101 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 		});
 	}
 
+	function updateImage( imageNode, imageData ) {
+		var className, width, node, html, captionNode, nodeToReplace, uid;
+
+		if ( imageData.caption ) {
+
+			html = createImageAndLink( imageData, 'html' );
+
+			width = imageData.width + 10;
+			className = 'align' + imageData.align;
+
+			//TODO: shouldn't add the id attribute if it isn't an attachment
+
+			// should create a new function for genrating the caption markup
+			html =  '<dl id="'+ imageData.attachment_id +'" class="wp-caption '+ className +'" style="width: '+ width +'px">' +
+				'<dt class="wp-caption-dt">'+ html + '</dt><dd class="wp-caption-dd">'+ imageData.caption +'</dd></dl>';
+
+			node = editor.dom.create( 'div', { 'class': 'mceTemp', draggable: 'true' }, html );
+		} else {
+			node = createImageAndLink( imageData, 'node' );
+		}
+
+		nodeToReplace = imageNode;
+
+		captionNode = editor.dom.getParent( imageNode, '.mceTemp' );
+
+		if ( captionNode ) {
+			nodeToReplace = captionNode;
+		} else {
+			if ( imageNode.parentNode.nodeName === 'A' ) {
+				nodeToReplace = imageNode.parentNode;
+			}
+		}
+
+		uid = editor.dom.uniqueId( 'wp_' );
+		editor.dom.setAttrib( node, 'data-wp-replace-id', uid );
+		editor.dom.replace( node, nodeToReplace );
+
+		// find the updated node
+		node = editor.dom.select( '[data-wp-replace-id="' + uid + '"]' )[0];
+
+		editor.dom.setAttrib( node, 'data-wp-replace-id', '' );
+
+		if ( node.nodeName === 'IMG' ) {
+			editor.selection.select( node );
+		} else {
+			editor.selection.select( editor.dom.select( 'img', node )[0] );
+		}
+		editor.nodeChanged();
+
+	}
+
+	function createImageAndLink( imageData, mode ) {
+		var classes = [],
+			props;
+
+		mode = mode ? mode : 'node';
+
+		if ( imageData.size ) {
+			classes.push( 'size-' + imageData.size );
+		}
+
+		if ( ! imageData.caption ) {
+			classes.push( 'align' + imageData.align );
+		}
+
+		if ( imageData.attachment_id ) {
+			classes.push( 'wp-image-' + imageData.attachment_id );
+		}
+
+		props = {
+			src: imageData.url,
+			width: imageData.width,
+			height: imageData.height
+		};
+
+		if ( classes.length ) {
+			props['class'] = classes.join( ' ' );
+		}
+
+		if ( imageData.linkUrl ) {
+			if ( mode === 'node' ) {
+				return editor.dom.create( 'a', { href: imageData.linkUrl }, editor.dom.createHTML( 'img', props ) );
+			} else if ( mode === 'html' ) {
+				return editor.dom.createHTML( 'a', { href: imageData.linkUrl }, editor.dom.createHTML( 'img', props ) );
+			}
+		} else {
+			if ( mode === 'node' ) {
+				return editor.dom.create( 'img', props );
+			} else if ( mode === 'html' ) {
+				return editor.dom.createHTML( 'img', props );
+			}
+
+		}
+	}
+
 	editor.on( 'init', function() {
 		var dom = editor.dom;
 
@@ -453,7 +548,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 	});
 
 	editor.on( 'mouseup', function( e ) {
-		var metadata, classes, frame, captionBlock, caption, link, linkType, image;
+		var metadata, classes, frame, captionBlock, caption, link, image;
 		if ( e.target.nodeName === 'IMG' && editor.dom.getAttrib( e.target, 'data-mce-selected' ) === '1' ) {
 			// Don't trigger on right-click
 			if ( e.button !== 2 ) {
@@ -469,6 +564,8 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 				metadata = {
 					attachment_id: false,
 					url: false,
+					height: '',
+					width: '',
 					size: 'none',
 					caption: '',
 					alt: '',
@@ -477,10 +574,12 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					linkUrl: ''
 				};
 
-
 				metadata.url = editor.dom.getAttrib( image, 'src' );
 				metadata.alt = editor.dom.getAttrib( image, 'alt' );
+				metadata.width = parseInt( editor.dom.getAttrib( image, 'width' ), 10 );
+				metadata.height = parseInt( editor.dom.getAttrib( image, 'height' ), 10 );
 
+				//TODO: probably should capture attributes on both the <img /> and the <a /> so that they can be restored when the image and/or caption are updated
 
 				// extract meta data from classes (candidate for turning into a method)
 				classes = image.className.split( ' ' );
@@ -537,6 +636,12 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					multiple: false,
 					editing: true,
 					metadata: metadata
+				} );
+
+				// update the image when update is clicked in the media frame
+				frame.state('image-details').on( 'update', function( imageData ) {
+					editor.focus();
+					updateImage( image, imageData );
 				} );
 
 				frame.open();

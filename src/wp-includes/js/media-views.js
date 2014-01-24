@@ -2064,7 +2064,19 @@
 						priority: 80,
 
 						click: function() {
-							console.log( 'clicked update. the updating of the image should be triggered here' );
+							var controller = this.controller,
+								state = controller.state();
+
+							controller.close();
+
+							// not sure if we want to use wp.media.string.image which will create a shortcode or
+							// perhaps wp.html.string to at least to build the <img />
+
+							state.trigger( 'update', state.props.toJSON() );
+
+							// Restore and reset the default state.
+							controller.setState( controller.options.state );
+							controller.reset();
 						}
 					}
 				}
