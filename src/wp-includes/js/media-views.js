@@ -998,25 +998,10 @@
 			syncSelection: false
 		}, media.controller.Library.prototype.defaults ),
 
-		// probably should have some notion of an embed model
 		initialize: function( options ) {
-			var attachment = false;
-			this.props = new media.model.PostImage( options.metadata );
-
+			this.image = options.image;
 			media.controller.State.prototype.initialize.apply( this, arguments );
-		},
-
-		activate: function() {
-			media.controller.State.prototype.activate.apply( this, arguments );
-		},
-
-		deactivate: function() {
-			/**
-			 * call 'deactivate' directly on the parent class
-			 */
-			media.controller.State.prototype.deactivate.apply( this, arguments );
 		}
-
 	});
 
 	/**
@@ -1990,19 +1975,25 @@
 			priority: 120
 		},
 
+		initialize: function( options ) {
+			this.image = new media.model.PostImage( options.metadata );
+			media.view.MediaFrame.Select.prototype.initialize.apply( this, arguments );
+		},
+
 		bindHandlers: function() {
 			media.view.MediaFrame.Select.prototype.bindHandlers.apply( this, arguments );
 			this.on( 'menu:create:image-details', this.createMenu, this );
 			this.on( 'content:render:image-details', this.renderImageDetailsContent, this );
 			this.on( 'menu:render:image-details', this.renderMenu, this );
-			this.on( 'toolbar:render:image-details', this.renderToolbar, this );
+			this.on( 'toolbar:render:image-details', this.renderImageDetailsToolbar, this );
+			// override the select toolbar
+			this.on( 'toolbar:render:replace', this.renderReplaceImageToolbar, this );
 		},
 
 		createStates: function() {
-			var options = this.options;
 			this.states.add([
 				new media.controller.ImageDetails({
-					metadata: options.metadata,
+					image: this.image,
 					editable: false,
 					menu: 'image-details'
 				}),
@@ -2012,7 +2003,9 @@
 					multiple:  false,
 					title:     l10n.imageReplaceTitle,
 					menu: 'image-details',
-					priority:  80
+					toolbar: 'replace',
+					priority:  80,
+					displaySettings: true
 				})
 			]);
 		},
@@ -2020,8 +2013,8 @@
 		renderImageDetailsContent: function() {
 			var view = new media.view.ImageDetails({
 				controller: this,
-				model: this.state().props,
-				attachment: this.state().props.attachment
+				model: this.state().image,
+				attachment: this.state().image.attachment
 			}).render();
 
 			this.content.set( view );
@@ -2053,11 +2046,11 @@
 
 		},
 
-		renderToolbar: function() {
+		renderImageDetailsToolbar: function() {
 			this.toolbar.set( new media.view.Toolbar({
 				controller: this,
 				items: {
-					update: {
+					select: {
 						style:    'primary',
 						text:     l10n.update,
 						priority: 80,
@@ -2070,8 +2063,39 @@
 
 							// not sure if we want to use wp.media.string.image which will create a shortcode or
 							// perhaps wp.html.string to at least to build the <img />
+							state.trigger( 'update', controller.image.toJSON() );
 
-							state.trigger( 'update', state.props.toJSON() );
+							// Restore and reset the default state.
+							controller.setState( controller.options.state );
+							controller.reset();
+						}
+					}
+				}
+			}) );
+		},
+
+		renderReplaceImageToolbar: function() {
+			this.toolbar.set( new media.view.Toolbar({
+				controller: this,
+				items: {
+					replace: {
+						style:    'primary',
+						text:     l10n.replace,
+						priority: 80,
+
+						click: function() {
+							var controller = this.controller,
+								state = controller.state(),
+								selection = state.get( 'selection' ),
+								attachment = selection.single();
+
+							controller.close();
+
+							controller.image.changeAttachment( attachment, state.display( attachment ) );
+
+							// not sure if we want to use wp.media.string.image which will create a shortcode or
+							// perhaps wp.html.string to at least to build the <img />
+							state.trigger( 'replace', controller.image.toJSON() );
 
 							// Restore and reset the default state.
 							controller.setState( controller.options.state );
@@ -2081,8 +2105,6 @@
 				}
 			}) );
 		}
-
-
 
 	});
 

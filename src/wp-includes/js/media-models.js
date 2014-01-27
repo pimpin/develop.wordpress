@@ -342,13 +342,32 @@ window.wp = window.wp || {};
 			if ( attributes.attachment_id ) {
 				this.attachment = media.model.Attachment.get( attributes.attachment_id );
 				this.dfd = this.attachment.fetch();
-				this.listenTo( this.attachment, 'sync', this.setLinkTypeFromUrl );
+				this.bindAttachmentListeners();
 			}
 
 			// keep url in sync with changes to the type of link
 			this.on( 'change:link', this.updateLinkUrl, this );
 			this.on( 'change:size', this.updateSize, this );
 
+		},
+
+		bindAttachmentListeners: function() {
+			this.listenTo( this.attachment, 'sync', this.setLinkTypeFromUrl );
+		},
+
+		changeAttachment: function( attachment, props ) {
+			this.stopListening( this.attachment );
+			this.attachment = attachment;
+			this.bindAttachmentListeners();
+
+			this.set( 'attachment_id', this.attachment.get( 'id' ) );
+			this.set( 'caption', this.attachment.get( 'caption' ) );
+			this.set( 'alt', this.attachment.get( 'alt' ) );
+			this.set( 'size', props.get( 'size' ) );
+			this.set( 'align', props.get( 'align' ) );
+			this.set( 'link', props.get( 'link' ) );
+			this.updateLinkUrl();
+			this.updateSize();
 		},
 
 		setLinkTypeFromUrl: function() {

@@ -650,6 +650,11 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					updateImage( imageNode, imageData );
 				} );
 
+				frame.state('replace-image').on( 'replace', function( imageData ) {
+					editor.focus();
+					updateImage( imageNode, imageData );
+				} );
+
 				frame.open();
 
 
