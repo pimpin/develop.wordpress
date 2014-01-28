@@ -985,8 +985,6 @@
 
 		defaults: _.defaults({
 			id: 'image-details',
-			filterable: 'uploaded',
-			multiple: false,
 			toolbar: 'image-details',
 			title: l10n.imageDetailsTitle,
 			content: 'image-details',
@@ -994,8 +992,7 @@
 			router: false,
 			attachment: false,
 			priority: 60,
-			editing: false,
-			syncSelection: false
+			editing: false
 		}, media.controller.Library.prototype.defaults ),
 
 		initialize: function( options ) {
@@ -1011,7 +1008,75 @@
 	 *
 	 **/
 	media.controller.ReplaceImage = media.controller.Library.extend({
+		defaults: _.defaults({
+			id:         'replace-image',
+			filterable: 'uploaded',
+			multiple:   false,
+			toolbar:    'replace',
+			title:      l10n.replaceImageTitle,
+			priority:   60,
+			syncSelection: false
+		}, media.controller.Library.prototype.defaults ),
 
+		initialize: function( options ) {
+			var library, comparator;
+
+			this.image = options.image;
+
+			// If we haven't been provided a `library`, create a `Selection`.
+			if ( ! this.get('library') ) {
+				this.set( 'library', media.query({ type: 'image' }) );
+			}
+			/**
+			 * call 'initialize' directly on the parent class
+			 */
+			media.controller.Library.prototype.initialize.apply( this, arguments );
+
+			library    = this.get('library');
+			comparator = library.comparator;
+
+			// Overload the library's comparator to push items that are not in
+			// the mirrored query to the front of the aggregate collection.
+			library.comparator = function( a, b ) {
+				var aInQuery = !! this.mirroring.get( a.cid ),
+					bInQuery = !! this.mirroring.get( b.cid );
+
+				if ( ! aInQuery && bInQuery ) {
+					return -1;
+				} else if ( aInQuery && ! bInQuery ) {
+					return 1;
+				} else {
+					return comparator.apply( this, arguments );
+				}
+			};
+
+			// Add all items in the selection to the library, so any featured
+			// images that are not initially loaded still appear.
+			library.observe( this.get('selection') );
+		},
+
+		activate: function() {
+			this.updateSelection();
+			/**
+			 * call 'activate' directly on the parent class
+			 */
+			media.controller.Library.prototype.activate.apply( this, arguments );
+		},
+
+		deactivate: function() {
+			/**
+			 * call 'deactivate' directly on the parent class
+			 */
+			media.controller.Library.prototype.deactivate.apply( this, arguments );
+		},
+
+		updateSelection: function() {
+			var selection = this.get('selection'),
+				attachment = this.image.attachment;
+
+			selection.reset( attachment ? [ attachment ] : [] );
+
+		}
 
 
 	});
@@ -1977,6 +2042,7 @@
 
 		initialize: function( options ) {
 			this.image = new media.model.PostImage( options.metadata );
+			this.options.selection = new media.model.Selection( this.image.attachment, { multiple: false } );
 			media.view.MediaFrame.Select.prototype.initialize.apply( this, arguments );
 		},
 
@@ -1997,9 +2063,10 @@
 					editable: false,
 					menu: 'image-details'
 				}),
-				new media.controller.Library({
+				new media.controller.ReplaceImage({
 					id: 'replace-image',
 					library:   media.query( { type: 'image' } ),
+					image: this.image,
 					multiple:  false,
 					title:     l10n.imageReplaceTitle,
 					menu: 'image-details',
