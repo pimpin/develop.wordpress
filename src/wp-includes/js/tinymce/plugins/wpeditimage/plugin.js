@@ -622,12 +622,13 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 		}
 	});
 
-	editor.on( 'mouseup', function( e ) {
-		if ( e.target.nodeName === 'IMG' && editor.dom.getAttrib( e.target, 'data-mce-selected' ) === '1' ) {
+	editor.on( 'mousedown', function( e ) {
 		var imageNode, frame, callback;
+		if ( e.target.nodeName === 'IMG' && editor.selection.getNode() === e.target ) {
 			// Don't trigger on right-click
 			if ( e.button !== 2 ) {
 
+				// Don't attempt to edit placeholders
 				if ( editor.dom.hasClass( e.target, 'mceItem' ) || '1' === editor.dom.getAttrib( e.target, 'data-mce-placeholder' ) ) {
 					return;
 				}
