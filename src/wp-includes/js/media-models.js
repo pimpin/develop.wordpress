@@ -349,6 +349,8 @@ window.wp = window.wp || {};
 			this.on( 'change:link', this.updateLinkUrl, this );
 			this.on( 'change:size', this.updateSize, this );
 
+			this.setLinkTypeFromUrl();
+
 		},
 
 		bindAttachmentListeners: function() {

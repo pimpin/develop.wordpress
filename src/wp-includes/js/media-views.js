@@ -5183,10 +5183,15 @@
 		}
 	});
 
-	// maybe I should just avoid the inheritance
 	media.view.ImageDetails = media.view.Settings.AttachmentDisplay.extend({
 		className: 'image-details',
 		template:  media.template('image-details'),
+
+		initialize: function() {
+			// used in AttachmentDisplay.prototype.updateLinkTo
+			this.options.attachment = this.model.attachment;
+			media.view.Settings.AttachmentDisplay.prototype.initialize.apply( this, arguments );
+		},
 
 		prepare: function() {
 			var attachment = false;
@@ -5208,13 +5213,19 @@
 				// should instead show a spinner when the attachment is new and then add a listener that updates on change
 				this.model.dfd.done( function() {
 					media.view.Settings.AttachmentDisplay.prototype.render.apply( self, args );
+					self.resetFocus();
 				} );
 			} else {
 				media.view.Settings.AttachmentDisplay.prototype.render.apply( this, arguments );
+				this.resetFocus();
 			}
 
-
 			return this;
+		},
+
+		resetFocus: function() {
+			this.$( '.caption' ).focus();
+			this.$( '.embed-image-settings' ).scrollTop( 0 );
 		}
 	});
 }(jQuery));

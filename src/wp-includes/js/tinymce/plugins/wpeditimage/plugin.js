@@ -114,7 +114,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 			caption: '',
 			alt: '',
 			align: 'none',
-			link: 'none',
+			link: false,
 			linkUrl: ''
 		};
 
