@@ -77,6 +77,8 @@ window.wp = window.wp || {};
 		 *
 		 * Fetches a template by id.
 		 * See wp.template() in `wp-includes/js/wp-util.js`.
+		 *
+		 * @borrows wp.template as template
 		 */
 		template: wp.template,
 
@@ -85,6 +87,8 @@ window.wp = window.wp || {};
 		 *
 		 * Sends a POST request to WordPress.
 		 * See wp.ajax.post() in `wp-includes/js/wp-util.js`.
+		 *
+		 * @borrows wp.ajax.post as post
 		 */
 		post: wp.ajax.post,
 
@@ -93,6 +97,8 @@ window.wp = window.wp || {};
 		 *
 		 * Sends an XHR request to WordPress.
 		 * See wp.ajax.send() in `wp-includes/js/wp-util.js`.
+		 *
+		 * @borrows wp.ajax.send as ajax
 		 */
 		ajax: wp.ajax.send,
 
@@ -146,7 +152,7 @@ window.wp = window.wp || {};
 		 * @param {String} string
 		 * @param {Number} [length=30]
 		 * @param {String} [replacement=&hellip;]
-		 * @returns {String}
+		 * @returns {String} The string, unless length is greater than string.length.
 		 */
 		truncate: function( string, length, replacement ) {
 			length = length || 30;
@@ -169,7 +175,7 @@ window.wp = window.wp || {};
 	 * wp.media.attachment
 	 *
 	 * @static
-	 * @param {String} id
+	 * @param {String} id A string used to identify a model.
 	 * @returns {wp.media.model.Attachment}
 	 */
 	media.attachment = function( id ) {
@@ -185,6 +191,7 @@ window.wp = window.wp || {};
 	Attachment = media.model.Attachment = Backbone.Model.extend({
 		/**
 		 * Triggered when attachment details change
+		 * Overrides Backbone.Model.sync
 		 *
 		 * @param {string} method
 		 * @param {wp.media.model.Attachment} model
@@ -271,8 +278,9 @@ window.wp = window.wp || {};
 		/**
 		 * Convert date strings into Date objects.
 		 *
-		 * @param {Object} resp
-		 * @returns {Object}
+		 * @param {Object} resp The raw response object, typically returned by fetch()
+		 * @returns {Object} The modified response object, which is the attributes hash
+		 *    to be set on the model.
 		 */
 		parse: function( resp ) {
 			if ( ! resp ) {
@@ -284,8 +292,8 @@ window.wp = window.wp || {};
 			return resp;
 		},
 		/**
-		 * @param {Object} data
-		 * @param {Object} options
+		 * @param {Object} data The properties to be saved.
+		 * @param {Object} options Sync options. e.g. patch, wait, success, error.
 		 *
 		 * @this Backbone.Model
 		 *
@@ -309,6 +317,9 @@ window.wp = window.wp || {};
 		}
 	}, {
 		/**
+		 * Add a model to the end of the static 'all' collection and return it.
+		 *
+		 * @static
 		 * @param {Object} attrs
 		 * @returns {wp.media.model.Attachment}
 		 */
@@ -316,7 +327,10 @@ window.wp = window.wp || {};
 			return Attachments.all.push( attrs );
 		},
 		/**
-		 * @param {string} id
+		 * Retrieve a model, or add it to the end of the static 'all' collection before returning it.
+		 *
+		 * @static
+		 * @param {string} id A string used to identify a model.
 		 * @param {Backbone.Model|undefined} attachment
 		 * @returns {wp.media.model.Attachment}
 		 */
@@ -337,7 +351,7 @@ window.wp = window.wp || {};
 		 */
 		model: Attachment,
 		/**
-		 * @param {Array|Object} models
+		 * @param {Array} [models=[]] Array of models used to populate the collection.
 		 * @param {Object} [options={}]
 		 */
 		initialize: function( models, options ) {
@@ -488,6 +502,9 @@ window.wp = window.wp || {};
 		/**
 		 * @param {wp.media.model.Attachments} attachments
 		 * @param {object} [options={}]
+		 *
+		 * @fires wp.media.model.Attachments#reset
+		 *
 		 * @returns {wp.media.model.Attachments} Returns itself to allow chaining
 		 */
 		validateAll: function( attachments, options ) {
@@ -618,9 +635,11 @@ window.wp = window.wp || {};
 			return this.mirroring ? this.mirroring.hasMore() : false;
 		},
 		/**
-		 * @param {Object} resp
-		 * @param {XMLHttpRequest} xhr
-		 * @returns {Array}
+		 * Overrides Backbone.Collection.parse
+		 *
+		 * @param {Object|Array} resp The raw response Object/Array.
+		 * @param {Object} xhr
+		 * @returns {Array} The array of model attributes to be added to the collection
 		 */
 		parse: function( resp, xhr ) {
 			if ( ! _.isArray( resp ) ) {
@@ -690,10 +709,15 @@ window.wp = window.wp || {};
 		}
 	}, {
 		/**
+		 * @static
+		 * Overrides Backbone.Collection.comparator
+		 *
 		 * @param {Backbone.Model} a
 		 * @param {Backbone.Model} b
 		 * @param {Object} options
-		 * @returns {Number}
+		 * @returns {Number} -1 if the first model should come before the second,
+		 *    0 if they are of the same rank and
+		 *    1 if the first model should come after.
 		 */
 		comparator: function( a, b, options ) {
 			var key   = this.props.get('orderby'),
@@ -716,13 +740,19 @@ window.wp = window.wp || {};
 
 			return ( 'DESC' === order ) ? compare( a, b, ac, bc ) : compare( b, a, bc, ac );
 		},
-
+		/**
+		 * @namespace
+		 */
 		filters: {
 			/**
+			 * @static
 			 * Note that this client-side searching is *not* equivalent
 			 * to our server-side searching.
 			 *
 			 * @param {wp.media.model.Attachment} attachment
+			 *
+			 * @this wp.media.model.Attachments
+			 *
 			 * @returns {Boolean}
 			 */
 			search: function( attachment ) {
@@ -736,7 +766,11 @@ window.wp = window.wp || {};
 				}, this );
 			},
 			/**
+			 * @static
 			 * @param {wp.media.model.Attachment} attachment
+			 *
+			 * @this wp.media.model.Attachments
+			 *
 			 * @returns {Boolean}
 			 */
 			type: function( attachment ) {
@@ -744,7 +778,11 @@ window.wp = window.wp || {};
 				return ! type || -1 !== type.indexOf( attachment.get('type') );
 			},
 			/**
+			 * @static
 			 * @param {wp.media.model.Attachment} attachment
+			 *
+			 * @this wp.media.model.Attachments
+			 *
 			 * @returns {Boolean}
 			 */
 			uploadedTo: function( attachment ) {
@@ -759,6 +797,7 @@ window.wp = window.wp || {};
 	});
 
 	/**
+	 * @static
 	 * @member {wp.media.model.Attachments}
 	 */
 	Attachments.all = new Attachments();
@@ -792,7 +831,7 @@ window.wp = window.wp || {};
 		/**
 		 * @global wp.Uploader
 		 *
-		 * @param {Array} models
+		 * @param {Array} [models=[]] Array of models used to populate the collection.
 		 * @param {Object} [options={}]
 		 */
 		initialize: function( models, options ) {
@@ -877,6 +916,9 @@ window.wp = window.wp || {};
 			});
 		},
 		/**
+		 * Overrides Backbone.Collection.sync
+		 * Overrides wp.media.model.Attachments.sync
+		 *
 		 * @param {String} method
 		 * @param {Backbone.Model} model
 		 * @param {Object} [options={}]
@@ -915,15 +957,22 @@ window.wp = window.wp || {};
 			}
 		}
 	}, {
+		/**
+		 * @readonly
+		 */
 		defaultProps: {
 			orderby: 'date',
 			order:   'DESC'
 		},
-
+		/**
+		 * @readonly
+		 */
 		defaultArgs: {
 			posts_per_page: 40
 		},
-
+		/**
+		 * @readonly
+		 */
 		orderby: {
 			allowed:  [ 'name', 'author', 'date', 'title', 'modified', 'uploadedTo', 'id', 'post__in', 'menuOrder' ],
 			valuemap: {
@@ -932,7 +981,9 @@ window.wp = window.wp || {};
 				'menuOrder':  'menu_order ID'
 			}
 		},
-
+		/**
+		 * @readonly
+		 */
 		propmap: {
 			'search':    's',
 			'type':      'post_mime_type',
@@ -940,7 +991,12 @@ window.wp = window.wp || {};
 			'menuOrder': 'menu_order',
 			'uploadedTo': 'post_parent'
 		},
-
+		/**
+		 * @static
+		 * @method
+		 *
+		 * @returns {wp.media.model.Query} A new query.
+		 */
 		// Caches query objects so queries can be easily reused.
 		get: (function(){
 			/**
@@ -1029,8 +1085,8 @@ window.wp = window.wp || {};
 		 * Binds `single` instead of using the context argument to ensure
 		 * it receives no parameters.
 		 *
-		 * @param {Array} models
-		 * @param {Object} options
+		 * @param {Array} [models=[]] Array of models used to populate the collection.
+		 * @param {Object} [options={}]
 		 */
 		initialize: function( models, options ) {
 			/**
@@ -1046,6 +1102,9 @@ window.wp = window.wp || {};
 		 * Override the selection's add method.
 		 * If the workflow does not support multiple
 		 * selected attachments, reset the selection.
+		 *
+		 * Overrides Backbone.Collection.add
+		 * Overrides wp.media.model.Attachments.add
 		 *
 		 * @param {Array} models
 		 * @param {Object} options
