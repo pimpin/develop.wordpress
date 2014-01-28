@@ -4805,7 +4805,7 @@
 				attachment = this.options.attachment;
 
 			if ( 'none' === linkTo || 'embed' === linkTo || ( ! attachment && 'custom' !== linkTo ) ) {
-				$input.hide();
+				$input.addClass( 'hidden' );
 				return;
 			}
 
@@ -4821,7 +4821,7 @@
 				$input.prop( 'readonly', 'custom' !== linkTo );
 			}
 
-			$input.show();
+			$input.removeClass( 'hidden' );
 
 			// If the input is visible, focus and select its contents.
 			if ( $input.is(':visible') ) {
