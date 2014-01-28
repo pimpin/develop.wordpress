@@ -638,8 +638,6 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 				frame = wp.media({
 					frame: 'image',
 					state: 'image-details',
-					multiple: false,
-					editing: true,
 					metadata: extractImageData( imageNode )
 				} );
 
