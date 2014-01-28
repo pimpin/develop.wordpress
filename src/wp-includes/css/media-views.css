@@ -1411,7 +1411,7 @@
 }
 
 /**
- * Embed from URL
+ * Embed from URL and Image Details
  */
 .embed-url {
 	display: block;
@@ -1450,6 +1450,10 @@
 	bottom: 0;
 	padding: 16px 16px 32px;
 	overflow: auto;
+}
+
+.image-details .embed-image-settings {
+	top: 0;
 }
 
 .media-embed .thumbnail {
