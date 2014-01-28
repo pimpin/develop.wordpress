@@ -1492,6 +1492,10 @@
 	clear: both;
 }
 
+.media-embed .setting .hidden {
+	display: none;
+}
+
 .media-embed .setting span {
 	display: block;
 	width: 200px;
