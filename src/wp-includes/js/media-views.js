@@ -5217,14 +5217,14 @@
 				} );
 			} else {
 				media.view.Settings.AttachmentDisplay.prototype.render.apply( this, arguments );
-				this.resetFocus();
+				setTimeout( function() { self.resetFocus(); }, 10 );
 			}
 
 			return this;
 		},
 
 		resetFocus: function() {
-			this.$( '.caption' ).focus();
+			this.$( '.caption textarea' ).focus();
 			this.$( '.embed-image-settings' ).scrollTop( 0 );
 		}
 	});
