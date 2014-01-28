@@ -580,7 +580,7 @@ function wp_print_media_templates() {
 					<input type="text" class="link-to-custom" data-setting="linkUrl" />
 
 				<# } #>
-
+				</div>
 
 				<# if ( data.attachment ) { #>
 					<div class="setting size">
