@@ -1999,7 +1999,7 @@
 				}),
 				new media.controller.Library({
 					id: 'replace-image',
-					library:   media.query(),
+					library:   media.query( { type: 'image' } ),
 					multiple:  false,
 					title:     l10n.imageReplaceTitle,
 					menu: 'image-details',
