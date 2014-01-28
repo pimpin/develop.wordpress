@@ -623,8 +623,8 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 	});
 
 	editor.on( 'mouseup', function( e ) {
-		var imageNode, frame;
 		if ( e.target.nodeName === 'IMG' && editor.dom.getAttrib( e.target, 'data-mce-selected' ) === '1' ) {
+		var imageNode, frame, callback;
 			// Don't trigger on right-click
 			if ( e.button !== 2 ) {
 
@@ -632,10 +632,8 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					return;
 				}
 
-
 				imageNode = e.target;
 
-				// file, post, custom, none
 				frame = wp.media({
 					frame: 'image',
 					state: 'image-details',
@@ -644,16 +642,13 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					metadata: extractImageData( imageNode )
 				} );
 
-				// update the image when update is clicked in the media frame
-				frame.state('image-details').on( 'update', function( imageData ) {
-					editor.focus();
+				callback = function( imageData ) {
 					updateImage( imageNode, imageData );
-				} );
+					editor.focus();
+				};
 
-				frame.state('replace-image').on( 'replace', function( imageData ) {
-					editor.focus();
-					updateImage( imageNode, imageData );
-				} );
+				frame.state('image-details').on( 'update', callback );
+				frame.state('replace-image').on( 'replace', callback );
 
 				frame.open();
 
