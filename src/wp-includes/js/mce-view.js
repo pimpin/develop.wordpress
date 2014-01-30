@@ -462,7 +462,7 @@ window.wp = window.wp || {};
 			parent: $('#post_ID').val(),
 
 			events: {
-				'click .close': 'remove',
+				'click .remove': 'remove',
 				'click .edit':  'edit'
 			},
 
@@ -510,7 +510,6 @@ window.wp = window.wp || {};
 				this.frame = wp.media({
 					frame:     'post',
 					state:     'gallery-edit',
-					title:     l10n.editGallery,
 					editing:   true,
 					multiple:  true,
 					selection: selection
@@ -526,12 +525,14 @@ window.wp = window.wp || {};
 				}, this );
 
 				// Update the `shortcode` and `attachments`.
-				this.frame.get('gallery-edit').on( 'update', function( selection ) {
+				this.frame.state('gallery-edit').on( 'update', function( selection ) {
 					var	view = wp.mce.view.get('gallery');
 
 					this.options.shortcode = view.gallery.shortcode( selection );
 					this.update();
 				}, this );
+
+				this.frame.open();
 			}
 		}
 	});

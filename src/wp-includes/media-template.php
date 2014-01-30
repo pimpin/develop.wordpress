@@ -605,6 +605,7 @@ function wp_print_media_templates() {
 	?>
 
 	<script type="text/html" id="tmpl-editor-gallery">
+		<div class="toolbar"><span class="edit"><?php _e( 'edit' ); ?></span> <span class="remove"><?php _e( 'remove' ); ?></span></div>
 		<div class="gallery gallery-column-{{{ data.columns }}}">
 			<# _.each( data.attachments, function( attachment ) { #>
 				<dl class="gallery-item">

@@ -149,6 +149,7 @@ img::selection {
 	background-color: #efefef;
 }
 
+
  .wp-view-type-gallery .toolbar {
     position: absolute;
     top: 0;
@@ -156,6 +157,11 @@ img::selection {
     background-color: #333;
     color: white;
     padding: 4px;
+	display: none;
+}
+
+.wp-view-type-gallery.selected .toolbar {
+	display: block;
 }
 
  .wp-view-type-gallery .toolbar span {
