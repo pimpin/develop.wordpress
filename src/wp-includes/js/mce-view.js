@@ -175,6 +175,7 @@ window.wp = window.wp || {};
 		// every match.
 		//
 		// To render the views, call `wp.mce.view.render( scope )`.
+		// TODO: needs unit tests!
 		toViews: function( content ) {
 			var pieces = [ { content: content } ],
 				current;
