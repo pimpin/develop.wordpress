@@ -251,7 +251,9 @@ window.wp = window.wp || {};
 					'class': 'wp-view-wrap wp-view-type-' + viewType,
 					'data-wp-view':    id,
 					'contenteditable': false
-				}
+				},
+
+				content: '\u00a0'
 			});
 		},
 
