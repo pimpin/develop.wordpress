@@ -132,7 +132,7 @@ img::selection {
  */
 .wp-view-type-gallery {
     position: relative;
-    padding-top: 16px;
+    padding: 16px 0;
     margin-bottom: 16px;
 	cursor: pointer;
 }
@@ -150,7 +150,7 @@ img::selection {
 }
 
 
- .wp-view-type-gallery .toolbar {
+.wp-view-type-gallery .toolbar {
     position: absolute;
     top: 0;
     left: 0;
@@ -164,21 +164,23 @@ img::selection {
 	display: block;
 }
 
- .wp-view-type-gallery .toolbar span {
+.wp-view-type-gallery .toolbar span {
 	cursor: pointer;
 }
 
- .gallery img[data-mce-selected]:focus {
+.gallery img[data-mce-selected]:focus {
 	outline: none;
 }
 
- .gallery a {
+.gallery a {
 	cursor: default;
 }
+
 .gallery {
 	margin: auto;
     line-height: 1;
 }
+
 .gallery .gallery-item {
 	float: left;
 	margin: 10px 0 0 0;

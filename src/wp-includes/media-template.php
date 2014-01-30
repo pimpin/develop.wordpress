@@ -606,17 +606,22 @@ function wp_print_media_templates() {
 
 	<script type="text/html" id="tmpl-editor-gallery">
 		<div class="toolbar"><span class="edit"><?php _e( 'edit' ); ?></span> <span class="remove"><?php _e( 'remove' ); ?></span></div>
-		<div class="gallery gallery-column-{{{ data.columns }}}">
-			<# _.each( data.attachments, function( attachment ) { #>
+		<div class="gallery gallery-columns-{{{ data.columns }}}">
+			<# _.each( data.attachments, function( attachment, index ) { #>
 				<dl class="gallery-item">
-					<dd class="gallery-icon">
+					<dt class="gallery-icon">
 						<?php // TODO: need to figure out the best way to make sure that we have thumbnails ?>
 						<img src="{{{ attachment.sizes.thumbnail.url }}}" />
-					</dd>
-					<dt class="wp-caption-text gallery-caption">
-						{{ attachment.caption }}
 					</dt>
+					<dd class="wp-caption-text gallery-caption">
+						{{ attachment.caption }}
+					</dd>
 				</dl>
+				<?php // this is kind silly, but copied from the gallery shortcode. Maybe it should be removed ?>
+				<# if ( index % data.columns === data.columns - 1 ) { #>
+					<br style="clear: both;">
+				<# } #>
+
 			<# } ); #>
 		</div>
 	</script>
