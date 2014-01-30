@@ -3,7 +3,8 @@ window.wp = window.wp || {};
 
 (function($){
 	var views = {},
-		instances = {};
+		instances = {},
+		media = wp.media;
 
 	// Create the `wp.mce` object if necessary.
 	wp.mce = wp.mce || {};
@@ -25,14 +26,16 @@ window.wp = window.wp || {};
 				},
 
 				toView: function( content ) {
-					if ( ! this.pattern )
+					if ( ! this.pattern ) {
 						return;
+					}
 
 					this.pattern.lastIndex = 0;
 					var match = this.pattern.exec( content );
 
-					if ( ! match )
+					if ( ! match ) {
 						return;
+					}
 
 					return {
 						index:   match.index,
@@ -56,8 +59,9 @@ window.wp = window.wp || {};
 				toView: function( content ) {
 					var match = wp.shortcode.next( this.shortcode, content );
 
-					if ( ! match )
+					if ( ! match ) {
 						return;
+					}
 
 					return {
 						index:   match.index,
@@ -98,12 +102,13 @@ window.wp = window.wp || {};
 			var parent, remove, base, properties;
 
 			// Fetch the parent view or the default options.
-			if ( options.extend )
+			if ( options.extend ) {
 				parent = wp.mce.view.get( options.extend );
-			else if ( options.shortcode )
+			} else if ( options.shortcode ) {
 				parent = wp.mce.view.defaults.shortcode;
-			else
+			} else {
 				parent = wp.mce.view.defaults.pattern;
+			}
 
 			// Extend the `options` object with the parent's properties.
 			_.defaults( options, parent );
@@ -118,8 +123,9 @@ window.wp = window.wp || {};
 					this.$el.parent().remove();
 
 					// Trigger the inherited `remove` method.
-					if ( remove )
+					if ( remove ) {
 						remove.apply( this, arguments );
+					}
 
 					return this;
 				}
@@ -138,8 +144,9 @@ window.wp = window.wp || {};
 
 			// If there's a `remove` method on the `base` view that wasn't
 			// created by this method, inherit it.
-			if ( ! remove && ! base._mceview )
+			if ( ! remove && ! base._mceview ) {
 				remove = base.prototype.remove;
+			}
 
 			// Automatically create the new `Backbone.View` constructor.
 			options.view = base.extend( properties, {
@@ -190,8 +197,9 @@ window.wp = window.wp || {};
 					// and slicing the string as we go.
 					while ( remaining && (result = view.toView( remaining )) ) {
 						// Any text before the match becomes an unprocessed piece.
-						if ( result.index )
+						if ( result.index ) {
 							pieces.push({ content: remaining.substring( 0, result.index ) });
+						}
 
 						// Add the processed piece for the match.
 						pieces.push({
@@ -205,8 +213,9 @@ window.wp = window.wp || {};
 
 					// There are no additional matches. If any content remains,
 					// add it as an unprocessed piece.
-					if ( remaining )
+					if ( remaining ) {
 						pieces.push({ content: remaining });
+					}
 				});
 			});
 
@@ -217,9 +226,9 @@ window.wp = window.wp || {};
 			var view = wp.mce.view.get( viewType ),
 				instance, id;
 
-			if ( ! view )
+			if ( ! view ) {
 				return '';
-
+			}
 			// Create a new view instance.
 			instance = new view.view( _.extend( options || {}, {
 				viewType: viewType
@@ -239,7 +248,7 @@ window.wp = window.wp || {};
 				tag: 'span' === instance.tagName ? 'span' : 'div',
 
 				attrs: {
-					'class':           'wp-view-wrap wp-view-type-' + viewType,
+					'class': 'wp-view-wrap wp-view-type-' + viewType,
 					'data-wp-view':    id,
 					'contenteditable': false
 				}
@@ -257,8 +266,9 @@ window.wp = window.wp || {};
 				var wrapper = $(this),
 					view = wp.mce.view.instance( this );
 
-				if ( ! view )
+				if ( ! view ) {
 					return;
+				}
 
 				// Link the real wrapper to the view.
 				view.$wrapper = wrapper;
@@ -278,13 +288,14 @@ window.wp = window.wp || {};
 		// Scans an HTML `content` string and replaces any view instances with
 		// their respective text representations.
 		toText: function( content ) {
-			return content.replace( /<(?:div|span)[^>]+data-wp-view="([^"]+)"[^>]*>.*?<span[^>]+data-wp-view-end[^>]*><\/span><\/(?:div|span)>/g, function( match, id ) {
+
+			return content.replace( /<(?:div|span)[^>]+data-wp-view="([^"]+)"[^>]*>.*?<span[^>]+data-wp-view-end[^>]*><\/span><\/(?:div|span)>/mg, function( match, id ) {
 				var instance = instances[ id ],
 					view;
 
-				if ( instance )
+				if ( instance ) {
 					view = wp.mce.view.get( instance.options.viewType );
-
+				}
 				return instance && view ? view.text( instance ) : '';
 			});
 		},
@@ -293,8 +304,9 @@ window.wp = window.wp || {};
 		removeInternalAttrs: function( attrs ) {
 			var result = {};
 			_.each( attrs, function( value, attr ) {
-				if ( -1 === attr.indexOf('data-mce') )
+				if ( -1 === attr.indexOf('data-mce') ) {
 					result[ attr ] = value;
+				}
 			});
 			return result;
 		},
@@ -311,8 +323,9 @@ window.wp = window.wp || {};
 		instance: function( node ) {
 			var id = $( node ).data('wp-view');
 
-			if ( id )
+			if ( id ) {
 				return instances[ id ];
+			}
 		},
 
 		// ### Select a view.
@@ -323,8 +336,9 @@ window.wp = window.wp || {};
 			var $node = $(node);
 
 			// Bail if node is already selected.
-			if ( $node.hasClass('selected') )
+			if ( $node.hasClass('selected') ) {
 				return;
+			}
 
 			$node.addClass('selected');
 			$( node.firstChild ).trigger('select');
@@ -338,12 +352,185 @@ window.wp = window.wp || {};
 			var $node = $(node);
 
 			// Bail if node is already selected.
-			if ( ! $node.hasClass('selected') )
+			if ( ! $node.hasClass('selected') ) {
 				return;
+			}
 
 			$node.removeClass('selected');
 			$( node.firstChild ).trigger('deselect');
 		}
 	};
 
+	wp.mce.view.add( 'gallery', {
+		shortcode: 'gallery',
+
+		gallery: (function() {
+			var galleries = {};
+
+			return {
+				attachments: function( shortcode, parent ) {
+					var shortcodeString = shortcode.string(),
+						result = galleries[ shortcodeString ],
+						attrs, args, query, others;
+
+					delete galleries[ shortcodeString ];
+
+					if ( result ) {
+						return result;
+					}
+
+					attrs = shortcode.attrs.named;
+					args  = _.pick( attrs, 'orderby', 'order' );
+
+					args.type    = 'image';
+					args.perPage = -1;
+
+					// Map the `ids` param to the correct query args.
+					if ( attrs.ids ) {
+						args.post__in = attrs.ids.split(',');
+						args.orderby  = 'post__in';
+					} else if ( attrs.include ) {
+						args.post__in = attrs.include.split(',');
+					}
+
+					if ( attrs.exclude ) {
+						args.post__not_in = attrs.exclude.split(',');
+					}
+
+					if ( ! args.post__in ) {
+						args.parent = attrs.id || parent;
+					}
+
+					// Collect the attributes that were not included in `args`.
+					others = {};
+					_.filter( attrs, function( value, key ) {
+						if ( _.isUndefined( args[ key ] ) ) {
+							others[ key ] = value;
+						}
+					});
+
+					query = media.query( args );
+					query.gallery = new Backbone.Model( others );
+					return query;
+				},
+
+				shortcode: function( attachments ) {
+					var props = attachments.props.toJSON(),
+						attrs = _.pick( props, 'include', 'exclude', 'orderby', 'order' ),
+						shortcode, clone;
+
+					if ( attachments.gallery ) {
+						_.extend( attrs, attachments.gallery.toJSON() );
+					}
+
+					attrs.ids = attachments.pluck('id');
+
+					// If the `ids` attribute is set and `orderby` attribute
+					// is the default value, clear it for cleaner output.
+					if ( attrs.ids && 'post__in' === attrs.orderby ) {
+						delete attrs.orderby;
+					}
+
+					shortcode = new wp.shortcode({
+						tag:    'gallery',
+						attrs:  attrs,
+						type:   'single'
+					});
+
+					// Use a cloned version of the gallery.
+					clone = new wp.media.model.Attachments( attachments.models, {
+						props: props
+					});
+					clone.gallery = attachments.gallery;
+					galleries[ shortcode.string() ] = clone;
+
+					return shortcode;
+				}
+			};
+		}()),
+
+		view: {
+			className: 'editor-gallery',
+			template:  media.template('editor-gallery'),
+
+			// The fallback post ID to use as a parent for galleries that don't
+			// specify the `ids` or `include` parameters.
+			//
+			// Uses the hidden input on the edit posts page by default.
+			parent: $('#post_ID').val(),
+
+			events: {
+				'click .close': 'remove',
+				'click .edit':  'edit'
+			},
+
+			initialize: function() {
+				this.update();
+			},
+
+			update: function() {
+				var	view = wp.mce.view.get('gallery');
+
+				this.attachments = view.gallery.attachments( this.options.shortcode, this.parent );
+				this.attachments.more().done( _.bind( this.render, this ) );
+			},
+
+			render: function() {
+				var attrs = this.options.shortcode.attrs.named,
+					options;
+
+				console.log( 'rendering:', this );
+				if ( ! this.attachments.length ) {
+					return;
+				}
+
+				options = {
+					attachments: this.attachments.toJSON(),
+					columns: attrs.columns ? parseInt( attrs.columns, 10 ) : 3
+				};
+
+				this.$el.html( this.template( options ) );
+			},
+
+			edit: function() {
+				var selection;
+
+				if ( ! wp.media.view || this.frame ) {
+					return;
+				}
+
+				selection = new wp.media.model.Selection( this.attachments.models, {
+					props:    this.attachments.props.toJSON(),
+					multiple: true
+				});
+				selection.gallery = this.attachments.gallery;
+
+				this.frame = wp.media({
+					frame:     'post',
+					state:     'gallery-edit',
+					title:     l10n.editGallery,
+					editing:   true,
+					multiple:  true,
+					selection: selection
+				});
+
+				// Create a single-use frame. If the frame is closed,
+				// then detach it from the DOM and remove the reference.
+				this.frame.on( 'close', function() {
+					if ( this.frame ) {
+						this.frame.detach();
+					}
+					delete this.frame;
+				}, this );
+
+				// Update the `shortcode` and `attachments`.
+				this.frame.get('gallery-edit').on( 'update', function( selection ) {
+					var	view = wp.mce.view.get('gallery');
+
+					this.options.shortcode = view.gallery.shortcode( selection );
+					this.update();
+				}, this );
+			}
+		}
+	});
 }(jQuery));
