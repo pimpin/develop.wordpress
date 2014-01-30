@@ -267,7 +267,8 @@ window.wp = window.wp || {};
 		render: function( scope ) {
 			$( '.wp-view-wrap', scope ).each( function() {
 				var wrapper = $(this),
-					view = wp.mce.view.instance( this );
+					view = wp.mce.view.instance( this ),
+					$shortcode;
 
 				if ( ! view ) {
 					return;
@@ -280,10 +281,19 @@ window.wp = window.wp || {};
 				// Detach the view element to ensure events are not unbound.
 				view.$el.detach();
 
+				$shortcode = $( '<span />' )
+					.addClass( 'wp-view-shortcode' )
+					.append( $( '<textarea />' )
+						.prop( 'disabled', true )
+						.text( view.options.shortcode.string() ) );
+
 				// Empty the wrapper, attach the view element to the wrapper,
+				// add a hidden element with the shortcode,
 				// and add an ending marker to the wrapper to help regexes
 				// scan the HTML string.
-				wrapper.empty().append( view.el ).append('<span data-wp-view-end class="wp-view-end"></span>');
+				wrapper.empty().append( view.el )
+					.prepend( $shortcode )
+					.append('<span data-wp-view-end class="wp-view-end"></span>');
 			});
 		},
 
@@ -477,6 +487,7 @@ window.wp = window.wp || {};
 				this.attachments = view.gallery.attachments( this.options.shortcode, this.parent );
 				this.attachments.more().done( _.bind( this.render, this ) );
 			},
+
 
 			render: function() {
 				var attrs = this.options.shortcode.attrs.named,

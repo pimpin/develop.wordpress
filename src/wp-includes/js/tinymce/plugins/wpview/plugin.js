@@ -28,6 +28,11 @@ tinymce.PluginManager.add( 'wpview', function( editor ) {
 
 		deselect();
 		selected = view;
+
+		editor.selection.collapse();
+
+		// select a the hidden span
+		editor.selection.select( editor.dom.select( '.wp-view-shortcode textarea', view )[0] );
 		wp.mce.view.select( selected );
 	}
 
@@ -67,6 +72,29 @@ tinymce.PluginManager.add( 'wpview', function( editor ) {
 	editor.on( 'SetContent', function() {
 		wp.mce.view.render( editor.getDoc() );
 	});
+
+	// Provide our own handler for selecting a view that is picked up before TinyMCE
+	// Ideally, TinyMCE would provide a way to relinquish control over a block that is marked contenteditable=false perhaps through some sort of data attribute
+	editor.on( 'mousedown', function( event ) {
+		var view = getParentView( event.target );
+
+		if ( event.metaKey || event.ctrlKey ) {
+			return;
+		}
+
+		// Update the selected view.
+		if ( view ) {
+			select( view );
+
+			// maybe we can trigger the mousedown so that a view can listen to it.
+			// Prevent the selection from propagating to other plugins.
+			return false;
+
+		} else {
+			deselect();
+		}
+	} );
+
 
 	editor.on( 'init', function() {
 		var selection = editor.selection;
@@ -128,30 +156,18 @@ tinymce.PluginManager.add( 'wpview', function( editor ) {
 		e.content = wp.mce.view.toText( e.content );
 	});
 
-	// Triggers when the selection is changed.
-	// Add the event handler to the top of the stack.
-	editor.on( 'NodeChange', function( e ) {
-		var view = getParentView( e.element );
-
-		// Update the selected view.
-		if ( view ) {
-			select( view );
-
-			// Prevent the selection from propagating to other plugins.
-			return false;
-
-		// If we've clicked off of the selected view, deselect it.
-		} else {
-			deselect();
-		}
-	});
-
 	editor.on( 'keydown', function( event ) {
 		var keyCode = event.keyCode,
 			view, instance;
 
 		// If a view isn't selected, let the event go on its merry way.
 		if ( ! selected ) {
+			return;
+		}
+
+		// Let keypresses that involve the command or control keys through.
+		// Also, let any of the F# keys through.
+		if ( event.metaKey || event.ctrlKey || ( keyCode >= 112 && keyCode <= 123 ) ) {
 			return;
 		}
 
@@ -171,11 +187,6 @@ tinymce.PluginManager.add( 'wpview', function( editor ) {
 			}
 		}
 
-		// Let keypresses that involve the command or control keys through.
-		// Also, let any of the F# keys through.
-		if ( event.metaKey || event.ctrlKey || ( keyCode >= 112 && keyCode <= 123 ) ) {
-			return;
-		}
 
 		event.preventDefault();
 	});

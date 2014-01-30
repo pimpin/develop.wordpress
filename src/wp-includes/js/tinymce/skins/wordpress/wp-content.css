@@ -127,6 +127,32 @@ img::selection {
 	border-style: solid;
 }
 
+
+/**
+ * WP Views
+ */
+
+/* delegate the handling of the selection to the wpview tinymce plugin */
+.wp-view-wrap,
+.wp-view-wrap * {
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+/* hide the shortcode content, but allow the content to still be selected */
+.wp-view-wrap .wp-view-shortcode {
+	display: none;
+}
+
+.wp-view-wrap .wp-view-shortcode textarea {
+	-moz-user-select: text;
+	-webkit-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
+}
+
 /**
  * Gallery preview
  */
@@ -148,7 +174,6 @@ img::selection {
  .wp-view-type-gallery.selected {
 	background-color: #efefef;
 }
-
 
 .wp-view-type-gallery .toolbar {
     position: absolute;
