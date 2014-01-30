@@ -481,7 +481,6 @@ window.wp = window.wp || {};
 				var attrs = this.options.shortcode.attrs.named,
 					options;
 
-				console.log( 'rendering:', this );
 				if ( ! this.attachments.length ) {
 					return;
 				}
