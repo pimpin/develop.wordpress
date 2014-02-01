@@ -133,6 +133,7 @@ img::selection {
  */
 
 /* delegate the handling of the selection to the wpview tinymce plugin */
+
 .wp-view-wrap,
 .wp-view-wrap * {
 	-moz-user-select: none;
@@ -143,14 +144,19 @@ img::selection {
 
 /* hide the shortcode content, but allow the content to still be selected */
 .wp-view-wrap .wp-view-shortcode {
-	display: none;
-}
+	position: absolute;
+	top: 20px;
+	width: 10px;
+	z-index: 100;
+	overflow: hidden;
+	opacity: 1;
+	left: -9999px;
+	display: block;
+	-moz-user-select: element;
+	-webkit-user-select: element;
+	-ms-user-select: element;
+	user-select: element;
 
-.wp-view-wrap .wp-view-shortcode textarea {
-	-moz-user-select: text;
-	-webkit-user-select: text;
-	-ms-user-select: text;
-	user-select: text;
 }
 
 /**

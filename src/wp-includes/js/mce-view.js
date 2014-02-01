@@ -281,11 +281,11 @@ window.wp = window.wp || {};
 				// Detach the view element to ensure events are not unbound.
 				view.$el.detach();
 
-				$shortcode = $( '<span />' )
+				$shortcode = $( '<div />' )
 					.addClass( 'wp-view-shortcode' )
-					.append( $( '<textarea />' )
-						.prop( 'disabled', true )
-						.text( view.options.shortcode.string() ) );
+					.prop( 'contenteditable', 'true' )
+					.data( 'mce-bogus', '1' )
+					.text( view.options.shortcode.string() );
 
 				// Empty the wrapper, attach the view element to the wrapper,
 				// add a hidden element with the shortcode,

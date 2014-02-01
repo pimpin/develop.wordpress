@@ -22,6 +22,7 @@ tinymce.PluginManager.add( 'wpview', function( editor ) {
 	}
 
 	function select( view ) {
+		var elem;
 		if ( view === selected ) {
 			return;
 		}
@@ -29,15 +30,32 @@ tinymce.PluginManager.add( 'wpview', function( editor ) {
 		deselect();
 		selected = view;
 
-		editor.selection.collapse();
+		elem = editor.dom.select( '.wp-view-shortcode', view )[0];
 
-		// select a the hidden span
-		editor.selection.select( editor.dom.select( '.wp-view-shortcode textarea', view )[0] );
+		// the following are both necessary to avoid tinymce from manipulating the selection/focus
+		editor.dom.bind(elem, 'beforedeactivate focusin focusout', function(e) {
+			e.stopPropagation();
+		});
+		editor.dom.bind(selected, 'beforedeactivate focusin focusout click ouseup', function(e) {
+			e.stopPropagation();
+		});
+
+		// select a the hidden div
+		editor.selection.select( elem, true );
+		elem.focus();
 		wp.mce.view.select( selected );
 	}
 
 	function deselect() {
+		var elem;
+
 		if ( selected ) {
+			elem = editor.dom.select( '.wp-view-shortcode', selected )[0];
+			editor.dom.unbind(elem, 'beforedeactivate focusin focusout');
+			editor.dom.unbind(selected, 'beforedeactivate focusin focusout click mouseup');
+
+			editor.selection.select( selected.nextSibling );
+			editor.selection.collapse();
 			wp.mce.view.deselect( selected );
 		}
 
@@ -94,7 +112,6 @@ tinymce.PluginManager.add( 'wpview', function( editor ) {
 			deselect();
 		}
 	} );
-
 
 	editor.on( 'init', function() {
 		var selection = editor.selection;
