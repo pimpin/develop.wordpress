@@ -5,6 +5,7 @@
 tinymce.PluginManager.add( 'wpview', function( editor ) {
 	var VK = tinymce.util.VK,
 		TreeWalker = tinymce.dom.TreeWalker,
+		removeSelected = false,
 		selected;
 
 	function getParentView( node ) {
@@ -185,6 +186,9 @@ tinymce.PluginManager.add( 'wpview', function( editor ) {
 		// Let keypresses that involve the command or control keys through.
 		// Also, let any of the F# keys through.
 		if ( event.metaKey || event.ctrlKey || ( keyCode >= 112 && keyCode <= 123 ) ) {
+			if ( ( event.metaKey || event.ctrlKey ) && keyCode === 88 ) {
+				removeSelected = true;
+			}
 			return;
 		}
 
@@ -204,7 +208,18 @@ tinymce.PluginManager.add( 'wpview', function( editor ) {
 			}
 		}
 
-
 		event.preventDefault();
+	});
+
+	editor.on( 'keyup', function() {
+		var instance;
+
+		if ( selected && removeSelected ) {
+			instance = wp.mce.view.instance( selected );
+			removeSelected = false;
+			instance.remove();
+			deselect();
+		}
+
 	});
 });
