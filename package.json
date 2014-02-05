@@ -22,6 +22,7 @@
     "grunt-cssjanus": "~0.2.2",
     "grunt-sass": "~0.10.0",
     "grunt-jsvalidate": "~0.2.2",
+    "grunt-patch": "git://github.com/aaronjorbin/grunt-patch.git",
     "matchdep": "~0.3.0"
   }
 }
