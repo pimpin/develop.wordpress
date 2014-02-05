@@ -508,6 +508,9 @@ function wp_print_media_templates() {
 				<div class="thumbnail">
 					<img src="{{ data.model.url }}" draggable="false" />
 				</div>
+				<# if ( data.attachment ) { #>
+					<input type="button" class="edit-attachment button" value="<?php esc_attr_e( 'Edit Image' ); ?>" />
+				<# } #>
 
 				<div class="setting url">
 					<?php // might want to make the url editable if it isn't an attachment ?>
@@ -597,6 +600,11 @@ function wp_print_media_templates() {
 				</div>
 			</div>
 		</div>
+	</script>
+
+	<script type="text/html" id="tmpl-image-editor">
+		<div id="media-head-{{{ data.id }}}"></div>
+		<div id="image-editor-{{{ data.id }}}"></div>
 	</script>
 	<?php
 

@@ -1086,6 +1086,50 @@
 	});
 
 	/**
+	 * wp.media.controller.EditImage
+	 *
+	 * @constructor
+	 * @augments wp.media.controller.State
+	 * @augments Backbone.Model
+	 */
+	media.controller.EditImage = media.controller.State.extend({
+		defaults: {
+			id: 'edit-image',
+			url: '',
+			menu: false,
+			content: 'edit-image',
+			syncSelection: true
+		},
+
+		activate: function() {
+
+			this.syncSelection();
+		},
+
+		syncSelection: function() {
+			var selection = this.get('selection'),
+				manager = this.frame._selection;
+
+			if ( ! this.get('syncSelection') || ! manager || ! selection ) {
+				return;
+			}
+
+			// If the selection supports multiple items, validate the stored
+			// attachments based on the new selection's conditions. Record
+			// the attachments that are not included; we'll maintain a
+			// reference to those. Other attachments are considered in flux.
+			if ( selection.multiple ) {
+				selection.reset( [], { silent: true });
+				selection.validateAll( manager.attachments );
+				manager.difference = _.difference( manager.attachments.models, selection.models );
+			}
+
+			// Sync the selection's single item with the master.
+			selection.single( manager.single );
+		}
+	});
+
+	/**
 	 * wp.media.controller.Embed
 	 *
 	 * @constructor
@@ -1758,7 +1802,9 @@
 					menu:    'gallery'
 				}),
 
-				new media.controller.GalleryAdd()
+				new media.controller.GalleryAdd(),
+
+				new media.controller.EditImage( { selection: options.selection } )
 			]);
 
 
@@ -1786,6 +1832,7 @@
 
 				content: {
 					'embed':          'embedContent',
+					'edit-image':     'editImageContent',
 					'edit-selection': 'editSelectionContent'
 				},
 
@@ -1881,6 +1928,17 @@
 
 			// Browse our library of attachments.
 			this.content.set( view );
+		},
+
+		editImageContent: function() {
+			var selection = this.state().get('selection'),
+				view = new media.view.EditImage( { model: selection.single() } ).render();
+
+			this.content.set( view );
+
+			// after bringing in the frame, load the actual editor via an ajax call
+			view.loadEditor();
+
 		},
 
 		// Toolbars
@@ -2054,6 +2112,7 @@
 			media.view.MediaFrame.Select.prototype.bindHandlers.apply( this, arguments );
 			this.on( 'menu:create:image-details', this.createMenu, this );
 			this.on( 'content:render:image-details', this.renderImageDetailsContent, this );
+			this.on( 'content:render:edit-image', this.editImageContent, this );
 			this.on( 'menu:render:image-details', this.renderMenu, this );
 			this.on( 'toolbar:render:image-details', this.renderImageDetailsToolbar, this );
 			// override the select toolbar
@@ -2077,7 +2136,8 @@
 					toolbar: 'replace',
 					priority:  80,
 					displaySettings: true
-				})
+				}),
+				new media.controller.EditImage( { image: this.image } )
 			]);
 		},
 
@@ -2114,6 +2174,23 @@
 					priority: 40
 				})
 			});
+
+		},
+
+		editImageContent: function() {
+			var attachment = this.state().get('image').attachment,
+				view;
+
+			if ( ! attachment ) {
+				return;
+			}
+
+			view = new media.view.EditImage( { model: attachment } ).render();
+
+			this.content.set( view );
+
+			// after bringing in the frame, load the actual editor via an ajax call
+			view.loadEditor();
 
 		},
 
@@ -4906,7 +4983,8 @@
 		},
 
 		editAttachment: function() {
-			this.$el.addClass('needs-refresh');
+			event.preventDefault();
+			this.controller.setState( 'edit-image' );
 		},
 		/**
 		 * @param {Object} event
@@ -4916,6 +4994,7 @@
 			event.preventDefault();
 			this.model.fetch();
 		}
+
 	});
 
 	/**
@@ -5189,7 +5268,9 @@
 	media.view.ImageDetails = media.view.Settings.AttachmentDisplay.extend({
 		className: 'image-details',
 		template:  media.template('image-details'),
-
+		events: {
+			'click .edit-attachment': 'editAttachment'
+		},
 		initialize: function() {
 			// used in AttachmentDisplay.prototype.updateLinkTo
 			this.options.attachment = this.model.attachment;
@@ -5229,6 +5310,39 @@
 		resetFocus: function() {
 			this.$( '.caption textarea' ).focus();
 			this.$( '.embed-image-settings' ).scrollTop( 0 );
+		},
+
+		editAttachment: function() {
+			event.preventDefault();
+			this.controller.setState( 'edit-image' );
 		}
 	});
+
+
+	media.view.EditImage = media.View.extend({
+
+		className: 'image-editor',
+		template: media.template('image-editor'),
+
+		initialize: function() {
+
+			this.editor = window.imageEdit;
+			media.View.prototype.initialize.apply( this, arguments );
+		},
+
+		prepare: function() {
+			return this.model.toJSON();
+		},
+
+		render: function() {
+			media.View.prototype.render.apply( this, arguments );
+			return this;
+		},
+
+		loadEditor: function() {
+			this.editor.open( this.model.get('id'), this.model.get('nonces').edit );
+		}
+
+	});
+
 }(jQuery));
