@@ -41,6 +41,23 @@ class Tests_DB extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that WPDB will reconnect when the DB link dies
+	 * @ticket 5932
+	 */
+	public function test_db_reconnect() {
+		global $wpdb;
+
+		$var = $wpdb->get_var( "SELECT ID FROM $wpdb->users LIMIT 1" );
+		$this->assertGreaterThan( 0, $var );
+
+		mysql_close( $wpdb->dbh );
+		unset( $wpdb->dbh );
+
+		$var = $wpdb->get_var( "SELECT ID FROM $wpdb->users LIMIT 1" );
+		$this->assertGreaterThan( 0, $var );
+	}
+
+	/**
 	 * Test that floats formatted as "0,700" get sanitized properly by wpdb
 	 * @global mixed $wpdb
 	 *
@@ -125,5 +142,84 @@ class Tests_DB extends WP_UnitTestCase {
 		global $wpdb;
 		$sql = $wpdb->prepare( "UPDATE test_table SET string_column = '%%f is a float, %%d is an int %d, %%s is a string', field = %s", 3, '4' );
 		$this->assertEquals( "UPDATE test_table SET string_column = '%f is a float, %d is an int 3, %s is a string', field = '4'", $sql );
+	}
+
+	/**
+	 * Test that SQL modes are set correctly
+	 * @ticket 26847
+	 */
+	public function test_set_sql_mode() {
+		global $wpdb;
+
+		$current_modes = $wpdb->get_var( 'SELECT @@SESSION.sql_mode;' );
+
+		$new_modes = array( 'IGNORE_SPACE', 'NO_AUTO_CREATE_USER' );
+		$wpdb->set_sql_mode( $new_modes );
+		$check_new_modes = $wpdb->get_var( 'SELECT @@SESSION.sql_mode;' );
+		$this->assertEquals( implode( ',', $new_modes ), $check_new_modes );
+
+		$wpdb->set_sql_mode( explode( ',', $current_modes ) );
+	}
+
+	/**
+	 * Test that incompatible SQL modes are blocked
+	 * @ticket 26847
+	 */
+	public function test_set_incompatible_sql_mode() {
+		global $wpdb;
+
+		$current_modes = $wpdb->get_var( 'SELECT @@SESSION.sql_mode;' );
+
+		$new_modes = array( 'IGNORE_SPACE', 'NO_ZERO_DATE', 'NO_AUTO_CREATE_USER' );
+		$wpdb->set_sql_mode( $new_modes );
+		$check_new_modes = $wpdb->get_var( 'SELECT @@SESSION.sql_mode;' );
+		$this->assertFalse( in_array( 'NO_ZERO_DATE', explode( ',', $check_new_modes ) ) );
+
+		$wpdb->set_sql_mode( explode( ',', $current_modes ) );
+	}
+
+	/**
+	 * Test that incompatible SQL modes can be changed
+	 * @ticket 26847
+	 */
+	public function test_set_allowed_incompatible_sql_mode() {
+		global $wpdb;
+
+		$current_modes = $wpdb->get_var( 'SELECT @@SESSION.sql_mode;' );
+
+		$new_modes = array( 'IGNORE_SPACE', 'NO_ZERO_DATE', 'NO_AUTO_CREATE_USER' );
+
+		add_filter( 'incompatible_sql_modes', array( $this, 'filter_allowed_incompatible_sql_mode' ), 1, 1 );
+		$wpdb->set_sql_mode( $new_modes );
+		remove_filter( 'incompatible_sql_modes', array( $this, 'filter_allowed_incompatible_sql_mode' ), 1 );
+
+		$check_new_modes = $wpdb->get_var( 'SELECT @@SESSION.sql_mode;' );
+		$this->assertTrue( in_array( 'NO_ZERO_DATE', explode( ',', $check_new_modes ) ) );
+
+		$wpdb->set_sql_mode( explode( ',', $current_modes ) );
+	}
+
+	public function filter_allowed_incompatible_sql_mode( $modes ) {
+		$pos = array_search( 'NO_ZERO_DATE', $modes );
+		$this->assertGreaterThanOrEqual( 0, $pos );
+
+		if ( FALSE === $pos ) {
+			return $modes;
+		}
+
+		unset( $modes[ $pos ] );
+		return $modes;
+	}
+
+	/**
+	 * @ticket 25604
+	 * @expectedIncorrectUsage wpdb::prepare
+	 */
+	function test_prepare_without_arguments() {
+		global $wpdb;
+		$id = 0;
+		// This, obviously, is an incorrect prepare.
+		$prepared = $wpdb->prepare( "SELECT * FROM $wpdb->users WHERE id = $id", $id );
+		$this->assertEquals( "SELECT * FROM $wpdb->users WHERE id = 0", $prepared );
 	}
 }
