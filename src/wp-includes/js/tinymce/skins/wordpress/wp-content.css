@@ -117,6 +117,34 @@ img::selection {
 	cursor: pointer;
 }
 
+#wp-image-toolbar {
+	height: 32px;
+	background-color: rgba( 0, 0, 0, 0.4);
+}
+
+#wp-image-toolbar .wrapper {
+	position: relative;
+
+}
+
+#wp-image-toolbar .dashicons {
+	position: absolute;
+	color: white;
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+#wp-image-toolbar div.dashicons-no-alt {
+	top: 4px;
+	right: 10px;
+}
+
+#wp-image-toolbar div.dashicons-format-image {
+	top: 4px;
+	left: 10px;
+}
+
 .mce-content-body img.wp-gallery:hover {
 	background-color: #ededed;
 	border-style: solid;
