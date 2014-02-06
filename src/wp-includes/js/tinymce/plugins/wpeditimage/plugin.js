@@ -529,7 +529,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 			isToolbar;
 
 		// Don't trigger on right-click
-		if ( event.button && event.button !== 1 ) {
+		if ( event.button && event.button > 1 ) {
 			return;
 		}
 
@@ -550,11 +550,11 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 			isToolbar = editor.dom.getParent( node, '#wp-image-toolbar' ) ? true : false;
 
 			if ( selected && isToolbar ) {
-				if ( editor.dom.hasClass( node, 'edit' ) ) {
-					editImage( selected );
-				} else if ( editor.dom.hasClass( node, 'remove' ) ) {
+				if ( editor.dom.hasClass( node, 'remove' ) ) {
 					removeImage( selected );
 					removeToolbar();
+				} else {
+					editImage( selected );
 				}
 			} else {
 				removeToolbar();
