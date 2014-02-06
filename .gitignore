@@ -10,6 +10,7 @@ lib-cov
 pids
 logs
 results
+tags
 
 wp-config.php
 wp-tests-config.php
@@ -19,6 +20,9 @@ tests/phpunit/data/.trac-ticket-cache*
 tests/qunit/compiled.html
 
 src/wp-content/uploads
+src/wp-content/plugins
+!src/wp-content/plugins/hello.php
+!src/wp-content/plugins/index.php
 
 node_modules
 npm-debug.log
