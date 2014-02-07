@@ -4995,7 +4995,7 @@
 			}
 		},
 
-		editAttachment: function() {
+		editAttachment: function( event ) {
 			event.preventDefault();
 			this.controller.setState( 'edit-image' );
 		},
@@ -5325,7 +5325,7 @@
 			this.$( '.embed-image-settings' ).scrollTop( 0 );
 		},
 
-		editAttachment: function() {
+		editAttachment: function( event ) {
 			event.preventDefault();
 			this.controller.setState( 'edit-image' );
 		}
