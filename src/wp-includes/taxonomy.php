@@ -1279,7 +1279,7 @@ function get_terms($taxonomies, $args = '') {
 	$args['number'] = absint( $args['number'] );
 	$args['offset'] = absint( $args['offset'] );
 	if ( !$single_taxonomy || ! is_taxonomy_hierarchical( reset( $taxonomies ) ) ||
-		'' !== $args['parent'] ) {
+		( '' !== $args['parent'] && 0 !== $args['parent'] ) ) {
 		$args['child_of'] = 0;
 		$args['hierarchical'] = false;
 		$args['pad_counts'] = false;
@@ -1876,6 +1876,7 @@ function wp_delete_term( $term, $taxonomy, $args = array() ) {
 		do_action( 'edit_term_taxonomies', $edit_tt_ids );
 		$wpdb->update( $wpdb->term_taxonomy, compact( 'parent' ), array( 'parent' => $term_obj->term_id) + compact( 'taxonomy' ) );
 		do_action( 'edited_term_taxonomies', $edit_tt_ids );
+		set_taxonomy_last_changed( $taxonomy );
 	}
 
 	$objects = $wpdb->get_col( $wpdb->prepare( "SELECT object_id FROM $wpdb->term_relationships WHERE term_taxonomy_id = %d", $tt_id ) );
@@ -1910,6 +1911,7 @@ function wp_delete_term( $term, $taxonomy, $args = array() ) {
 		$wpdb->delete( $wpdb->terms, array( 'term_id' => $term ) );
 
 	clean_term_cache($term, $taxonomy);
+	set_taxonomy_last_changed( $taxonomy );
 
 	do_action( 'delete_term', $term, $tt_id, $taxonomy, $deleted_term );
 	do_action( "delete_$taxonomy", $term, $tt_id, $deleted_term );
@@ -2162,6 +2164,7 @@ function wp_insert_term( $term, $taxonomy, $args = array() ) {
 			do_action( 'edit_terms', $alias->term_id, $taxonomy );
 			$wpdb->update($wpdb->terms, compact('term_group'), array('term_id' => $alias->term_id) );
 			do_action( 'edited_terms', $alias->term_id, $taxonomy );
+			set_taxonomy_last_changed( $taxonomy );
 		}
 	}
 
@@ -2223,6 +2226,7 @@ function wp_insert_term( $term, $taxonomy, $args = array() ) {
 	$term_id = apply_filters('term_id_filter', $term_id, $tt_id);
 
 	clean_term_cache($term_id, $taxonomy);
+	set_taxonomy_last_changed( $taxonomy );
 
 	do_action("created_term", $term_id, $tt_id, $taxonomy);
 	do_action("created_$taxonomy", $term_id, $tt_id);
@@ -2329,6 +2333,7 @@ function wp_set_object_terms($object_id, $terms, $taxonomy, $append = false) {
 	}
 
 	wp_cache_delete( $object_id, $taxonomy . '_relationships' );
+	set_taxonomy_last_changed( $taxonomy );
 
 	do_action('set_object_terms', $object_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids);
 	return $tt_ids;
@@ -2407,6 +2412,7 @@ function wp_remove_object_terms( $object_id, $terms, $taxonomy ) {
 		$deleted = $wpdb->query( $wpdb->prepare( "DELETE FROM $wpdb->term_relationships WHERE object_id = %d AND term_taxonomy_id IN ($in_tt_ids)", $object_id ) );
 		do_action( 'deleted_term_relationships', $object_id, $tt_ids );
 		wp_update_term_count( $tt_ids, $taxonomy );
+		set_taxonomy_last_changed( $taxonomy );
 
 		return (bool) $deleted;
 	}
@@ -2565,6 +2571,7 @@ function wp_update_term( $term_id, $taxonomy, $args = array() ) {
 			do_action( 'edit_terms', $alias->term_id, $taxonomy );
 			$wpdb->update( $wpdb->terms, compact('term_group'), array( 'term_id' => $alias->term_id ) );
 			do_action( 'edited_terms', $alias->term_id, $taxonomy );
+			set_taxonomy_last_changed( $taxonomy );
 		}
 	}
 
@@ -2600,6 +2607,7 @@ function wp_update_term( $term_id, $taxonomy, $args = array() ) {
 	$term_id = apply_filters('term_id_filter', $term_id, $tt_id);
 
 	clean_term_cache($term_id, $taxonomy);
+	set_taxonomy_last_changed( $taxonomy );
 
 	do_action("edited_term", $term_id, $tt_id, $taxonomy);
 	do_action("edited_$taxonomy", $term_id, $tt_id);
@@ -2738,9 +2746,12 @@ function clean_object_term_cache($object_ids, $object_type) {
 
 	$taxonomies = get_object_taxonomies( $object_type );
 
-	foreach ( $object_ids as $id )
-		foreach ( $taxonomies as $taxonomy )
+	foreach ( $object_ids as $id ) {
+		foreach ( $taxonomies as $taxonomy ) {
 			wp_cache_delete($id, "{$taxonomy}_relationships");
+			set_taxonomy_last_changed( $taxonomy );
+		}
+	}
 
 	do_action('clean_object_term_cache', $object_ids, $object_type);
 }
@@ -2800,6 +2811,7 @@ function clean_term_cache($ids, $taxonomy = '', $clean_taxonomy = true) {
 		}
 
 		do_action('clean_term_cache', $ids, $taxonomy);
+		set_taxonomy_last_changed( $taxonomy );
 	}
 
 	wp_cache_set( 'last_changed', microtime(), 'terms' );
@@ -2819,6 +2831,9 @@ function clean_term_cache($ids, $taxonomy = '', $clean_taxonomy = true) {
  * @return bool|array Empty array if $terms found, but not $taxonomy. False if nothing is in cache for $taxonomy and $id.
  */
 function get_object_term_cache($id, $taxonomy) {
+	if ( ! post_taxonomy_is_fresh( $id, $taxonomy ) ) {
+		return false;
+	}
 	$cache = wp_cache_get($id, "{$taxonomy}_relationships");
 	return $cache;
 }
@@ -2933,7 +2948,10 @@ function update_term_cache($terms, $taxonomy = '') {
 function _get_term_hierarchy($taxonomy) {
 	if ( !is_taxonomy_hierarchical($taxonomy) )
 		return array();
-	$children = get_option("{$taxonomy}_children");
+	$children = false;
+	if ( taxonomy_hierarchy_is_fresh( $taxonomy ) ) {
+		$children = get_option("{$taxonomy}_children");
+	}
 
 	if ( is_array($children) )
 		return $children;
@@ -2984,8 +3002,18 @@ function _get_term_children($term_id, $terms, $taxonomy) {
 			$use_id = true;
 		}
 
-		if ( $term->term_id == $term_id )
+		if ( $term->term_id == $term_id ) {
+			if ( isset( $has_children[$term_id] ) ) {
+				foreach ( $has_children[$term_id] as $t_id ) {
+					if ( $use_id ) {
+						$term_list[] = $t_id;
+					} else {
+						$term_list[] = get_term( $t_id, $taxonomy );
+					}
+				}
+			}
 			continue;
+		}
 
 		if ( $term->parent == $term_id ) {
 			if ( $use_id )
@@ -3117,6 +3145,7 @@ function _update_post_term_count( $terms, $taxonomy ) {
 		$wpdb->update( $wpdb->term_taxonomy, compact( 'count' ), array( 'term_taxonomy_id' => $term ) );
 		do_action( 'edited_term_taxonomy', $term, $taxonomy );
 	}
+	set_taxonomy_last_changed( $taxonomy->name );
 }
 
 /**
@@ -3142,6 +3171,7 @@ function _update_generic_term_count( $terms, $taxonomy ) {
 		$wpdb->update( $wpdb->term_taxonomy, compact( 'count' ), array( 'term_taxonomy_id' => $term ) );
 		do_action( 'edited_term_taxonomy', $term, $taxonomy );
 	}
+	set_taxonomy_last_changed( $taxonomy->name );
 }
 
 /**
@@ -3468,4 +3498,75 @@ function wp_check_term_hierarchy_for_loops( $parent, $term_id, $taxonomy ) {
 		wp_update_term( $loop_member, $taxonomy, array( 'parent' => 0 ) );
 
 	return $parent;
+}
+
+/**
+ * Retrieve the 'last_changed' value for the passed taxonomy. Retrieves
+ *  from cache, if present
+ *
+ * @since 3.9.0
+ *
+ * @param string $taxonomy
+ * @return int
+ */
+function get_taxonomy_last_changed( $taxonomy ) {
+	$last_changed = wp_cache_get( 'last_changed', $taxonomy );
+	if ( ! $last_changed ) {
+		$last_changed = microtime();
+		wp_cache_set( 'last_changed', $last_changed, $taxonomy );
+	}
+	return $last_changed;
+}
+
+/**
+ * Reset 'last_changed' for the passed taxonomy
+ *
+ * @since 3.9.0
+ *
+ * @param string $taxonomy
+ * @return int
+ */
+function set_taxonomy_last_changed( $taxonomy ) {
+	wp_cache_delete( 'last_changed', $taxonomy );
+	return get_taxonomy_last_changed( $taxonomy );
+}
+
+/**
+ * Determine if a post's cache for the passed taxonomy
+ *  is in sync.
+ *
+ * @since 3.9.0
+ *
+ * @param int $id
+ * @param string $taxonomy
+ * @return boolean
+ */
+function post_taxonomy_is_fresh( $id, $taxonomy ) {
+	$last_changed = get_taxonomy_last_changed( $taxonomy );
+	$post_last_changed = wp_cache_get( $id, $taxonomy . '_last_changed' );
+	if ( ! $post_last_changed || $last_changed !== $post_last_changed ) {
+		wp_cache_set( $id, $last_changed, $taxonomy . '_last_changed' );
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Determine if a hierarchy's cache for the passed taxonomy
+ *  is in sync.
+ *
+ * @since 3.9.0
+ *
+ * @param int $id
+ * @param string $taxonomy
+ * @return boolean
+ */
+function taxonomy_hierarchy_is_fresh( $taxonomy ) {
+	$last_changed = get_taxonomy_last_changed( $taxonomy );
+	$hierarchy_last_changed = wp_cache_get( 'hierarchy_last_changed', $taxonomy );
+	if ( ! $hierarchy_last_changed || $last_changed !== $hierarchy_last_changed ) {
+		wp_cache_set( 'hierarchy_last_changed', $last_changed, $taxonomy );
+		return false;
+	}
+	return true;
 }

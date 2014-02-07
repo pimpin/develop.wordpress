@@ -44,8 +44,9 @@
 		sensitivity = sensitivity || 2000;
 
 		if ( $.support.transition ) {
-			if ( ! (selector instanceof $) )
+			if ( ! (selector instanceof $) ) {
 				selector = $( selector );
+			}
 
 			// Resolve the deferred when the first element finishes animating.
 			selector.first().one( $.support.transition.end, deferred.resolve );
@@ -216,7 +217,7 @@
 		 *
 		 * @param {string} id
 		 * @returns {wp.media.controller.State} Returns a State model
-		 *	 from the StateMachine collection
+		 *   from the StateMachine collection
 		 */
 		state: function( id ) {
 			this.states = this.states || new Backbone.Collection();
@@ -269,7 +270,7 @@
 		 * active state.
 		 *
 		 * @returns {wp.media.controller.State} Returns a State model
-		 *	 from the StateMachine collection
+		 *    from the StateMachine collection
 		 */
 		lastState: function() {
 			if ( this._lastState ) {
@@ -535,11 +536,13 @@
 				}) );
 			}
 
-			if ( ! this.get('edge') )
+			if ( ! this.get('edge') ) {
 				this.set( 'edge', 120 );
+			}
 
-			if ( ! this.get('gutter') )
+			if ( ! this.get('gutter') ) {
 				this.set( 'gutter', 8 );
+			}
 
 			this.resetDisplays();
 		},
@@ -893,8 +896,9 @@
 			var library = this.get('library'),
 				edit    = this.frame.state('gallery-edit').get('library');
 
-			if ( this.editLibrary && this.editLibrary !== edit )
+			if ( this.editLibrary && this.editLibrary !== edit ) {
 				library.unobserve( this.editLibrary );
+			}
 
 			// Accepts attachments that exist in the original library and
 			// that do not exist in gallery's library.
@@ -1181,8 +1185,9 @@
 			if ( attributes.scanners.length ) {
 				scanners = attributes.scanners = $.when.apply( $, attributes.scanners );
 				scanners.always( function() {
-					if ( embed.get('scanners') === scanners )
+					if ( embed.get('scanners') === scanners ) {
 						embed.set( 'loading', false );
+					}
 				});
 			} else {
 				attributes.scanners = null;
@@ -1876,10 +1881,11 @@
 					text:     l10n.cancelGalleryTitle,
 					priority: 20,
 					click:    function() {
-						if ( previous )
+						if ( previous ) {
 							frame.setState( previous );
-						else
+						} else {
 							frame.close();
+						}
 					}
 				},
 				separateCancel: new media.View({
@@ -2572,8 +2578,9 @@
 			media.transition( $el ).done( function() {
 				// Transition end events are subject to race conditions.
 				// Make sure that the value is set as intended.
-				if ( '0' === $el.css('opacity') )
+				if ( '0' === $el.css('opacity') ) {
 					$el.hide();
+				}
 			});
 		}
 	});
@@ -3100,8 +3107,9 @@
 			// value to the `model` and remove it from the `options object.
 			_.each( this.defaults, function( def, key ) {
 				var value = this.options[ key ];
-				if ( _.isUndefined( value ) )
+				if ( _.isUndefined( value ) ) {
 					return;
+				}
 
 				this.model.set( key, value );
 				delete this.options[ key ];
@@ -3568,8 +3576,9 @@
 			options.buttons  = this.buttons;
 			options.describe = this.controller.state().get('describe');
 
-			if ( 'image' === options.type )
+			if ( 'image' === options.type ) {
 				options.size = this.imageSize();
+			}
 
 			options.can = {};
 			if ( options.nonces ) {
@@ -3577,17 +3586,19 @@
 				options.can.save = !! options.nonces.update;
 			}
 
-			if ( this.controller.state().get('allowLocalEdits') )
+			if ( this.controller.state().get('allowLocalEdits') ) {
 				options.allowLocalEdits = true;
+			}
 
 			this.views.detach();
 			this.$el.html( this.template( options ) );
 
 			this.$el.toggleClass( 'uploading', options.uploading );
-			if ( options.uploading )
+			if ( options.uploading ) {
 				this.$bar = this.$('.media-progress-bar div');
-			else
+			} else {
 				delete this.$bar;
+			}
 
 			// Check if the model is selected.
 			this.updateSelect();
@@ -4111,8 +4122,9 @@
 		},
 
 		refreshSortable: function() {
-			if ( ! this.options.sortable || ! $.fn.sortable )
+			if ( ! this.options.sortable || ! $.fn.sortable ) {
 				return;
+			}
 
 			// If the `collection` has a `comparator`, disable sorting.
 			var collection = this.collection,
@@ -4464,8 +4476,9 @@
 
 			if ( ! this.collection.length ) {
 				this.collection.more().done( function() {
-					if ( ! view.collection.length )
+					if ( ! view.collection.length ) {
 						view.createUploader();
+					}
 				});
 			}
 		},
