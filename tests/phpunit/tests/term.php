@@ -519,7 +519,6 @@ class Tests_Term extends WP_UnitTestCase {
 
 		$terms = get_the_terms( $post_id, 'post_tag' );
 		$this->assertEquals( $tag_id, $terms[0]->term_id );
-		$this->assertEquals( 'This description is even more amazing!', $terms[0]->description );
 	}
 
 	function test_wp_set_post_categories() {
