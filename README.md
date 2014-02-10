@@ -1,7 +1,7 @@
 develop.wordpress
 =================
 
-[![Build Status](https://travis-ci.org/pimpin/develop.wordpress)](https://travis-ci.org/pimpin/develop.wordpress) 
+[![Build Status](https://travis-ci.org/pimpin/develop.wordpress.png)](https://travis-ci.org/pimpin/develop.wordpress) 
 
 (For academic purpose only)
 
