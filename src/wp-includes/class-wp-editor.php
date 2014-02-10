@@ -235,9 +235,9 @@ final class _WP_Editors {
 						'fullscreen',
 						'wordpress',
 						'wpeditimage',
-						'wpgallery',
 						'wplink',
 						'wpdialogs',
+						'wpview'
 					) ) );
 
 					if ( ( $key = array_search( 'spellchecker', $plugins ) ) !== false ) {
@@ -493,7 +493,11 @@ final class _WP_Editors {
 		if ( self::$has_medialib ) {
 			add_thickbox();
 			wp_enqueue_script('media-upload');
+
+			if ( self::$has_tinymce )
+				wp_enqueue_script('mce-view');
 		}
+
 	}
 
 	public static function wp_mce_translation() {
