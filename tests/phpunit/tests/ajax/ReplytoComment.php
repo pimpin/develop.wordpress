@@ -43,50 +43,6 @@ class Tests_Ajax_ReplytoComment extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
-	 * Reply as a privilged user (administrator)
-	 * Expects test to pass
-	 * @return void
-	 */
-	public function test_as_admin() {
-
-		// Become an administrator
-		$this->_setRole( 'administrator' );
-
-		// Get a comment
-		$comments = get_comments( array(
-		    'post_id' => $this->_comment_post->ID
-		) );
-		$comment = array_pop( $comments );
-
-		// Set up a default request
-		$_POST['_ajax_nonce-replyto-comment'] = wp_create_nonce( 'replyto-comment' );
-		$_POST['comment_ID']                  = $comment->comment_ID;
-		$_POST['content']                     = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.';
-		$_POST['comment_post_ID']             = $this->_comment_post->ID;
-
-		// Make the request
-		try {
-			$this->_handleAjax( 'replyto-comment' );
-		} catch ( WPAjaxDieContinueException $e ) {
-			unset( $e );
-		}
-
-		// Get the response
-		$xml = simplexml_load_string( $this->_last_response, 'SimpleXMLElement', LIBXML_NOCDATA );
-
-		// Check the meta data
-		$this->assertEquals( -1, (string) $xml->response[0]->comment['position'] );
-		$this->assertGreaterThan( 0, (int) $xml->response[0]->comment['id'] );
-		$this->assertNotEmpty( (string) $xml->response['action'] );
-
-		// Check the payload
-		$this->assertNotEmpty( (string) $xml->response[0]->comment[0]->response_data );
-
-		// And supplemental is empty
-		$this->assertEmpty( (string) $xml->response[0]->comment[0]->supplemental );
-	}
-
-	/**
 	 * Reply as a non-privileged user (subscriber)
 	 * Expects test to fail
 	 * @return void
