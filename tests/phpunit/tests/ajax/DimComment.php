@@ -200,16 +200,6 @@ class Tests_Ajax_DimComment extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
-	 * Dim a comment as an administrator (expects success)
-	 * @return void
-	 */
-	public function test_ajax_comment_dim_actions_as_administrator() {
-		$comment = array_pop( $this->_comments );
-		$this->_test_as_admin( $comment );
-		$this->_test_as_admin( $comment );
-	}
-
-	/**
 	 * Dim a comment as a subscriber (expects permission denied)
 	 * @return void
 	 */
