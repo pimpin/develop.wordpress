@@ -249,27 +249,6 @@ class Tests_Ajax_DeleteComment extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
-	 * Delete a comment as an administrator (expects success)
-	 * @return void
-	 */
-	public function test_ajax_comment_trash_actions_as_administrator() {
-
-		// Test trash/untrash
-		$comment = array_pop( $this->_comments );
-		$this->_test_as_admin( $comment, 'trash' );
-		$this->_test_as_admin( $comment, 'untrash' );
-
-		// Test spam/unspam
-		$comment = array_pop( $this->_comments );
-		$this->_test_as_admin( $comment, 'spam' );
-		$this->_test_as_admin( $comment, 'unspam' );
-
-		// Test delete
-		$comment = array_pop( $this->_comments );
-		$this->_test_as_admin( $comment, 'delete' );
-	}
-
-	/**
 	 * Delete a comment as a subscriber (expects permission denied)
 	 * @return void
 	 */
@@ -290,26 +269,6 @@ class Tests_Ajax_DeleteComment extends WP_Ajax_UnitTestCase {
 		$this->_test_as_subscriber( $comment, 'delete' );
 	}
 
-	/**
-	 * Delete a comment with no id
-	 * @return void
-	 */
-	public function test_ajax_trash_comment_no_id() {
-
-		// Test trash/untrash
-		$comment = array_pop( $this->_comments );
-		$this->_test_as_admin( $comment, 'trash' );
-		$this->_test_as_admin( $comment, 'untrash' );
-
-		// Test spam/unspam
-		$comment = array_pop( $this->_comments );
-		$this->_test_as_admin( $comment, 'spam' );
-		$this->_test_as_admin( $comment, 'unspam' );
-
-		// Test delete
-		$comment = array_pop( $this->_comments );
-		$this->_test_as_admin( $comment, 'delete' );
-	}
 
 	/**
 	 * Delete a comment with a bad nonce
@@ -332,24 +291,4 @@ class Tests_Ajax_DeleteComment extends WP_Ajax_UnitTestCase {
 		$this->_test_with_bad_nonce( $comment, 'delete' );
 	}
 
-	/**
-	 * Test trashing an already trashed comment, etc.
-	 * @return void
-	 */
-	public function test_ajax_trash_double_action() {
-
-		// Test trash/untrash
-		$comment = array_pop( $this->_comments );
-		$this->_test_double_action( $comment, 'trash' );
-		$this->_test_double_action( $comment, 'untrash' );
-
-		// Test spam/unspam
-		$comment = array_pop( $this->_comments );
-		$this->_test_double_action( $comment, 'spam' );
-		$this->_test_double_action( $comment, 'unspam' );
-
-		// Test delete
-		$comment = array_pop( $this->_comments );
-		$this->_test_double_action( $comment, 'delete' );
-	}
 }
